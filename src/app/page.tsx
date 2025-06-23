@@ -50,12 +50,15 @@ export default function AuthPage() {
     defaultValues: { email: '', password: '' },
   });
 
-  const onContinue = async (values: z.infer<typeof formSchema>) => {
+  const onContinue = async () => {
+    const isValid = await form.trigger('email');
+    if (!isValid) return;
+
+    const emailValue = form.getValues('email');
     setIsLoading(true);
     try {
-        const methods = await fetchSignInMethodsForEmail(auth, values.email);
-        setEmail(values.email);
-        form.setValue('email', values.email); 
+        const methods = await fetchSignInMethodsForEmail(auth, emailValue);
+        setEmail(emailValue);
         if (methods.length > 0) {
             setStep('loginPassword');
         } else {
@@ -101,9 +104,7 @@ export default function AuthPage() {
   }
   
   const handleFormSubmit = (values: z.infer<typeof formSchema>) => {
-    if (step === 'email') {
-      onContinue(values);
-    } else if (step === 'loginPassword') {
+    if (step === 'loginPassword') {
       onLogin(values);
     } else if (step === 'registerPassword') {
       onRegister(values);
@@ -247,7 +248,13 @@ export default function AuthPage() {
                          )}/>
                     )}
                     
-                    <Button type="submit" className="w-full !mt-6" size="lg" disabled={isLoading}>
+                    <Button 
+                        type={step === 'email' ? 'button' : 'submit'} 
+                        onClick={step === 'email' ? onContinue : undefined}
+                        className="w-full !mt-6" 
+                        size="lg" 
+                        disabled={isLoading}
+                    >
                         {isLoading ? 'Loading...' : getButtonText()}
                     </Button>
                 </form>

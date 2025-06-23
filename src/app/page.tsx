@@ -99,6 +99,16 @@ export default function AuthPage() {
       setIsLoading(false);
     }
   }
+  
+  const handleFormSubmit = (values: z.infer<typeof formSchema>) => {
+    if (step === 'email') {
+      onContinue(values);
+    } else if (step === 'loginPassword') {
+      onLogin(values);
+    } else if (step === 'registerPassword') {
+      onRegister(values);
+    }
+  };
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
@@ -124,14 +134,6 @@ export default function AuthPage() {
     form.reset({ email: email, password: '' });
   }
 
-  const getSubmitHandler = () => {
-    switch(step) {
-      case 'email': return form.handleSubmit(onContinue);
-      case 'loginPassword': return form.handleSubmit(onLogin);
-      case 'registerPassword': return form.handleSubmit(onRegister);
-    }
-  }
-  
   const getTitle = () => {
     switch (step) {
       case 'email':
@@ -176,7 +178,7 @@ export default function AuthPage() {
             {getSubtitle()}
 
             <Form {...form}>
-                <form onSubmit={getSubmitHandler()} className="space-y-6">
+                <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
                     <FormField control={form.control} name="email" render={({ field }) => (
                         <FormItem>
                             <FormLabel>Email/Phone Number</FormLabel>

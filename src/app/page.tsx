@@ -15,25 +15,16 @@ import {
 } from 'firebase/auth';
 
 import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { auth } from '@/lib/firebase';
-import { ArrowLeft, Lock, XCircle } from 'lucide-react';
+import { ArrowLeft, Lock, XCircle, Pencil, Eye, EyeOff } from 'lucide-react';
 import { PublicHeader } from '@/components/PublicHeader';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email.' }),
   password: z.string().min(6, { message: 'Password must be at least 6 characters.' }).optional(),
-  confirmPassword: z.string().optional(),
-}).refine(data => {
-    if (data.password && data.confirmPassword) {
-        return data.password === data.confirmPassword;
-    }
-    return true;
-}, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
 });
 
 const GoogleIcon = () => (
@@ -52,10 +43,11 @@ export default function AuthPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [step, setStep] = useState<'email' | 'loginPassword' | 'registerPassword'>('email');
   const [email, setEmail] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: { email: '', password: '', confirmPassword: '' },
+    defaultValues: { email: '', password: '' },
   });
 
   const onContinue = async (values: z.infer<typeof formSchema>) => {
@@ -63,6 +55,7 @@ export default function AuthPage() {
     try {
         const methods = await fetchSignInMethodsForEmail(auth, values.email);
         setEmail(values.email);
+        form.setValue('email', values.email); 
         if (methods.length > 0) {
             setStep('loginPassword');
         } else {
@@ -122,12 +115,13 @@ export default function AuthPage() {
   };
 
   const goBack = () => {
-    if (step === 'email') {
-      router.back();
-    } else {
-      setStep('email');
-      form.reset({ email: email, password: '', confirmPassword: '' });
-    }
+    router.back();
+  }
+  
+  const editEmail = () => {
+    setStep('email');
+    setShowPassword(false);
+    form.reset({ email: email, password: '' });
   }
 
   const getSubmitHandler = () => {
@@ -137,35 +131,65 @@ export default function AuthPage() {
       case 'registerPassword': return form.handleSubmit(onRegister);
     }
   }
+  
+  const getTitle = () => {
+    switch (step) {
+      case 'email':
+        return 'Login / Register';
+      case 'loginPassword':
+        return 'Enter your password';
+      case 'registerPassword':
+        return 'Create Your Account';
+    }
+  };
+
+  const getSubtitle = () => {
+    if (step === 'email') {
+      return (
+        <div className="flex items-center justify-center gap-2 text-gray-600 mb-8 text-sm text-center px-4">
+            <Lock size={16} className="flex-shrink-0"/>
+            <span>We use industry-standard encryption to keep your data safe.</span>
+        </div>
+      );
+    }
+    return <p className="text-gray-600 text-center mb-8">Simple and secure.</p>
+  }
+  
+  const getButtonText = () => {
+    switch (step) {
+      case 'email': return 'Continue';
+      case 'loginPassword': return 'Login';
+      case 'registerPassword': return 'Register';
+    }
+  }
 
   return (
     <div className="bg-white min-h-screen">
       <PublicHeader />
       <main className="container mx-auto px-4 py-12 flex justify-center">
         <div className="w-full max-w-sm">
-            <button onClick={goBack} className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-black mb-8">
+            <button onClick={step === 'email' ? goBack : editEmail} className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-black mb-8">
                 <ArrowLeft size={16} />
             </button>
           
-            <h1 className="text-3xl font-bold text-center mb-4">Login / Register</h1>
-            <div className="flex items-center justify-center gap-2 text-gray-600 mb-8 text-sm text-center px-4">
-                <Lock size={16} className="flex-shrink-0"/>
-                <span>We use industry-standard encryption to keep your data safe.</span>
-            </div>
+            <h1 className="text-3xl font-bold text-center mb-4">{getTitle()}</h1>
+            {getSubtitle()}
 
             <Form {...form}>
-                <form onSubmit={getSubmitHandler()} className="space-y-4">
-                    {step === 'email' && (
-                        <FormField control={form.control} name="email" render={({ field }) => (
-                            <FormItem>
-                                <FormControl>
-                                    <div className="relative">
-                                        <Input 
-                                            placeholder="Mobile Number or Email" 
-                                            {...field} 
-                                            className="pr-10"
-                                        />
-                                        {field.value && (
+                <form onSubmit={getSubmitHandler()} className="space-y-6">
+                    <FormField control={form.control} name="email" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Email/Phone Number</FormLabel>
+                            <FormControl>
+                                <div className="relative">
+                                    <Input 
+                                        placeholder="Mobile Number or Email" 
+                                        {...field} 
+                                        className="pr-10"
+                                        readOnly={step !== 'email'}
+                                    />
+                                    {step === 'email' ? (
+                                        field.value && (
                                             <button
                                                 type="button"
                                                 onClick={() => form.setValue('email', '')}
@@ -174,31 +198,55 @@ export default function AuthPage() {
                                             >
                                                 <XCircle className="h-5 w-5 text-gray-400 hover:text-gray-600" />
                                             </button>
-                                        )}
+                                        )
+                                    ) : (
+                                        <button
+                                            type="button"
+                                            onClick={editEmail}
+                                            className="absolute inset-y-0 right-0 flex items-center pr-3"
+                                            aria-label="Edit email"
+                                        >
+                                            <Pencil className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                                        </button>
+                                    )}
+                                </div>
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}/>
+                    
+                    {(step === 'loginPassword' || step === 'registerPassword') && (
+                         <FormField control={form.control} name="password" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Password</FormLabel>
+                                <FormControl>
+                                    <div className="relative">
+                                        <Input 
+                                            type={showPassword ? "text" : "password"}
+                                            placeholder={step === 'loginPassword' ? "Password" : "Create Password"} 
+                                            {...field} autoFocus 
+                                        />
+                                         <button
+                                            type="button"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            className="absolute inset-y-0 right-0 flex items-center pr-3"
+                                            aria-label={showPassword ? "Hide password" : "Show password"}
+                                        >
+                                            {showPassword ? (
+                                                <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                                            ) : (
+                                                <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                                            )}
+                                        </button>
                                     </div>
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
-                        )}/>
-                    )}
-                    {step === 'loginPassword' && (
-                         <FormField control={form.control} name="password" render={({ field }) => (
-                            <FormItem><FormControl><Input type="password" placeholder="Password" {...field} autoFocus /></FormControl><FormMessage /></FormItem>
                          )}/>
-                    )}
-                    {step === 'registerPassword' && (
-                        <>
-                            <FormField control={form.control} name="password" render={({ field }) => (
-                                <FormItem><FormControl><Input type="password" placeholder="Create Password" {...field} autoFocus/></FormControl><FormMessage /></FormItem>
-                            )}/>
-                             <FormField control={form.control} name="confirmPassword" render={({ field }) => (
-                                <FormItem><FormControl><Input type="password" placeholder="Confirm Password" {...field} /></FormControl><FormMessage /></FormItem>
-                            )}/>
-                        </>
                     )}
                     
                     <Button type="submit" className="w-full !mt-6" size="lg" disabled={isLoading}>
-                        {isLoading ? 'Loading...' : 'Continue'}
+                        {isLoading ? 'Loading...' : getButtonText()}
                     </Button>
                 </form>
             </Form>
@@ -211,11 +259,11 @@ export default function AuthPage() {
 
             <Button variant="outline" className="w-full" size="lg" onClick={handleGoogleSignIn} disabled={isLoading}>
                 <GoogleIcon />
-                Continue with Google
+                {step === 'registerPassword' ? 'Register with Google' : 'Continue with Google'}
             </Button>
 
             <p className="text-center text-xs text-gray-500 mt-8">
-                By continuing, you agree to our{' '}
+                By {step === 'registerPassword' ? 'Register' : 'continuing'}, you agree to our{' '}
                 <Link href="#" className="underline">Privacy & Cookie Policy</Link> and{' '}
                 <Link href="#" className="underline">Terms & Conditions</Link>.
             </p>

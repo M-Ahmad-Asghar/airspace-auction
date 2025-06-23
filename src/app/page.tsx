@@ -19,7 +19,7 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from '@/component
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { auth } from '@/lib/firebase';
-import { ArrowLeft, Lock } from 'lucide-react';
+import { ArrowLeft, Lock, XCircle } from 'lucide-react';
 import { PublicHeader } from '@/components/PublicHeader';
 
 const formSchema = z.object({
@@ -157,7 +157,28 @@ export default function AuthPage() {
                 <form onSubmit={getSubmitHandler()} className="space-y-4">
                     {step === 'email' && (
                         <FormField control={form.control} name="email" render={({ field }) => (
-                            <FormItem><FormControl><Input placeholder="Mobile Number or Email" {...field} /></FormControl><FormMessage /></FormItem>
+                            <FormItem>
+                                <FormControl>
+                                    <div className="relative">
+                                        <Input 
+                                            placeholder="Mobile Number or Email" 
+                                            {...field} 
+                                            className="pr-10"
+                                        />
+                                        {field.value && (
+                                            <button
+                                                type="button"
+                                                onClick={() => form.setValue('email', '')}
+                                                className="absolute inset-y-0 right-0 flex items-center pr-3"
+                                                aria-label="Clear email"
+                                            >
+                                                <XCircle className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                                            </button>
+                                        )}
+                                    </div>
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
                         )}/>
                     )}
                     {step === 'loginPassword' && (

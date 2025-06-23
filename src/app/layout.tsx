@@ -4,7 +4,7 @@ import { AuthProvider } from '@/components/AuthProvider';
 import { Toaster } from '@/components/ui/toaster';
 
 export const metadata: Metadata = {
-  title: 'Listify',
+  title: 'airplanedeals.com',
   description: 'Create and browse listings with ease.',
 };
 

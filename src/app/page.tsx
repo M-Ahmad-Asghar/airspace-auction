@@ -18,10 +18,9 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { auth } from '@/lib/firebase';
+import { auth, isFirebaseConfigured } from '@/lib/firebase';
 import { ArrowLeft, Lock, XCircle, Pencil, Eye, EyeOff, Terminal } from 'lucide-react';
 import { PublicHeader } from '@/components/PublicHeader';
-import { useAuth } from '@/hooks/useAuth';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { createUserProfile, type UserProfileData } from '@/services/userService';
 
@@ -43,7 +42,6 @@ const GoogleIcon = () => (
 export default function AuthPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { isFirebaseConfigured } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [step, setStep] = useState<'email' | 'loginPassword' | 'registerPassword'>('email');
   const [email, setEmail] = useState('');
@@ -56,6 +54,8 @@ export default function AuthPage() {
 
   const onContinue = async () => {
     if (!isFirebaseConfigured || !auth) return;
+    
+    // Trigger validation for the email field
     const isValid = await form.trigger('email');
     if (!isValid) return;
 
@@ -73,7 +73,7 @@ export default function AuthPage() {
         toast({
             variant: "destructive",
             title: "Error",
-            description: error.message || "An unexpected error occurred.",
+            description: error.message || "An unexpected error occurred checking your email.",
         });
     } finally {
         setIsLoading(false);
@@ -84,28 +84,35 @@ export default function AuthPage() {
     if (!isFirebaseConfigured || !auth || !values.password) return;
     setIsLoading(true);
 
-    if (step === 'loginPassword') {
-      try {
+    try {
+      if (step === 'loginPassword') {
         await signInWithEmailAndPassword(auth, email, values.password);
         toast({ title: 'Success', description: "You've successfully signed in." });
         router.push('/home');
-      } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Login Failed', description: 'Invalid password. Please try again.' });
-      } finally {
-        setIsLoading(false);
-      }
-    } else if (step === 'registerPassword') {
-      try {
+      } else if (step === 'registerPassword') {
         const userCredential = await createUserWithEmailAndPassword(auth, email, values.password);
         const { uid, email: userEmail, displayName, photoURL } = userCredential.user;
         await createUserProfile({ uid, email: userEmail, displayName, photoURL });
         toast({ title: 'Account Created', description: "You've successfully created your account." });
         router.push('/home');
-      } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Sign Up Failed', description: error.message });
-      } finally {
-        setIsLoading(false);
       }
+    } catch (error: any) {
+        let errorMessage = "An unexpected error occurred. Please try again.";
+        if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
+          errorMessage = 'Invalid password. Please try again.';
+        } else if (error.code === 'auth/email-already-in-use') {
+          errorMessage = 'This email is already registered. Please log in.';
+        } else {
+          errorMessage = error.message;
+        }
+
+        toast({
+            variant: 'destructive',
+            title: step === 'loginPassword' ? 'Login Failed' : 'Sign Up Failed',
+            description: errorMessage
+        });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -116,6 +123,7 @@ export default function AuthPage() {
     try {
         const result = await signInWithPopup(auth, provider);
         const { uid, email, displayName, photoURL } = result.user;
+        // Ensure profile is created/exists for Google sign-in users too
         await createUserProfile({ uid, email, displayName, photoURL });
         toast({ title: "Success", description: "You've successfully signed in with Google." });
         router.push("/home");
@@ -138,12 +146,9 @@ export default function AuthPage() {
 
   const getTitle = () => {
     switch (step) {
-      case 'email':
-        return 'Login / Register';
-      case 'loginPassword':
-        return 'Enter your password';
-      case 'registerPassword':
-        return 'Create Your Account';
+      case 'email': return 'Login / Register';
+      case 'loginPassword': return 'Enter your password';
+      case 'registerPassword': return 'Create Your Account';
     }
   };
 
@@ -186,7 +191,8 @@ export default function AuthPage() {
               </Alert>
             )}
             <button onClick={step === 'email' ? goBack : editEmail} className="flex items-center text-sm font-medium text-gray-600 hover:text-black mb-4">
-                <ArrowLeft size={16} />
+                <ArrowLeft size={16} className="mr-2" />
+                {step !== 'email' && 'Back'}
             </button>
           
             <h1 className="text-3xl font-bold text-center mb-4">{getTitle()}</h1>
@@ -196,11 +202,11 @@ export default function AuthPage() {
                 <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
                     <FormField control={form.control} name="email" render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Email/Phone Number</FormLabel>
+                            <FormLabel>Email</FormLabel>
                             <FormControl>
                                 <div className="relative">
                                     <Input 
-                                        placeholder="Mobile Number or Email" 
+                                        placeholder="Enter your email" 
                                         {...field} 
                                         className="pr-10"
                                         readOnly={step !== 'email'}
@@ -282,11 +288,11 @@ export default function AuthPage() {
 
             <Button variant="outline" className="w-full" size="lg" onClick={handleGoogleSignIn} disabled={isLoading || !isFirebaseConfigured}>
                 <GoogleIcon />
-                {step === 'registerPassword' ? 'Register with Google' : 'Continue with Google'}
+                <span className="ml-2">{step === 'registerPassword' ? 'Register with Google' : 'Continue with Google'}</span>
             </Button>
 
             <p className="text-center text-xs text-gray-500 mt-8">
-                By {step === 'registerPassword' ? 'Register' : 'continuing'}, you agree to our{' '}
+                By {step === 'registerPassword' ? 'registering' : 'continuing'}, you agree to our{' '}
                 <Link href="#" className="underline">Privacy & Cookie Policy</Link> and{' '}
                 <Link href="#" className="underline">Terms & Conditions</Link>.
             </p>

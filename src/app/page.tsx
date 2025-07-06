@@ -23,6 +23,7 @@ import { ArrowLeft, Lock, XCircle, Pencil, Eye, EyeOff, Terminal } from 'lucide-
 import { PublicHeader } from '@/components/PublicHeader';
 import { useAuth } from '@/hooks/useAuth';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { createUserProfile } from '@/services/userService';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email.' }),
@@ -97,7 +98,8 @@ export default function AuthPage() {
     if (!isFirebaseConfigured || !auth || !values.password) return;
     setIsLoading(true);
     try {
-      await createUserWithEmailAndPassword(auth, email, values.password);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, values.password);
+      await createUserProfile(userCredential.user);
       toast({ title: 'Account Created', description: "You've successfully created your account." });
       router.push('/home');
     } catch (error: any) {
@@ -120,7 +122,8 @@ export default function AuthPage() {
     setIsLoading(true);
     const provider = new GoogleAuthProvider();
     try {
-        await signInWithPopup(auth, provider);
+        const result = await signInWithPopup(auth, provider);
+        await createUserProfile(result.user);
         toast({ title: "Success", description: "You've successfully signed in with Google." });
         router.push("/home");
     } catch (error: any) {

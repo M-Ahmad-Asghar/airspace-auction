@@ -10,7 +10,8 @@ import {
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword,
   GoogleAuthProvider, 
-  signInWithPopup
+  signInWithPopup,
+  sendEmailVerification
 } from 'firebase/auth';
 
 import { Button } from '@/components/ui/button';
@@ -99,10 +100,14 @@ export default function AuthPage() {
         router.push('/home');
       } else if (step === 'registerPassword') {
         const userCredential = await createUserWithEmailAndPassword(auth, email, values.password);
-        const { uid, email: userEmail, displayName, photoURL } = userCredential.user;
-        await createUserProfile({ uid, email: userEmail, displayName, photoURL });
-        toast({ title: 'Account Created', description: "You've successfully created your account." });
-        router.push('/home');
+        const { uid, email: userEmail, displayName, photoURL, emailVerified } = userCredential.user;
+        
+        await sendEmailVerification(userCredential.user);
+
+        await createUserProfile({ uid, email: userEmail, displayName, photoURL, emailVerified });
+
+        toast({ title: 'Account Created', description: "Registration successful! Please check your email to verify your account." });
+        router.push('/home'); // Will be redirected to /verify-email by ProtectedRoute
       }
     } catch (error: any) {
         let errorMessage = "An unexpected error occurred. Please try again.";
@@ -131,8 +136,8 @@ export default function AuthPage() {
     const provider = new GoogleAuthProvider();
     try {
         const result = await signInWithPopup(auth, provider);
-        const { uid, email, displayName, photoURL } = result.user;
-        await createUserProfile({ uid, email, displayName, photoURL });
+        const { uid, email, displayName, photoURL, emailVerified } = result.user;
+        await createUserProfile({ uid, email, displayName, photoURL, emailVerified });
         toast({ title: "Success", description: "You've successfully signed in with Google." });
         router.push("/home");
     } catch (error: any) {

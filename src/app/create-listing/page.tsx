@@ -8,30 +8,77 @@ import * as z from 'zod';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 import { ImageUploader } from '@/components/ImageUploader';
+import { createAircraftListing } from '@/services/listingService';
+import { Separator } from '@/components/ui/separator';
+import { CATEGORIES } from '@/lib/constants';
 
 const formSchema = z.object({
-  title: z.string().min(5, { message: 'Title must be at least 5 characters.' }),
-  description: z.string().min(20, { message: 'Description must be at least 20 characters.' }),
-  images: z.array(z.instanceof(File)).min(1, 'Please upload at least one image.').max(5, 'You can upload a maximum of 5 images.'),
+  category: z.string().min(1, 'Category is required.'),
+  type: z.string().min(1, 'Type is required.'),
+  images: z.array(z.instanceof(File)).min(1, 'Please upload at least one image.').max(4, 'You can upload a maximum of 4 images.'),
+  location: z.string().min(3, 'Location is required.'),
+  price: z.coerce.number().positive('Price must be a positive number.'),
+  registration: z.string().min(1, 'Registration is required.'),
+  year: z.coerce.number().int().min(1900, 'Year must be after 1900.').max(new Date().getFullYear() + 1, `Year can't be in the future.`),
+  manufacturer: z.string().min(2, 'Manufacturer is required.'),
+  model: z.string().min(1, 'Model is required.'),
+  description: z.string().min(20, 'Description must be at least 20 characters.'),
+  totalAirframeTime: z.coerce.number().positive('Must be a positive number.'),
+  engineTimeMin: z.coerce.number().optional(),
+  engineTimeMax: z.coerce.number().optional(),
+  engineDetails: z.string().min(10, 'Engine details are required.'),
+  propellerTimeMin: z.coerce.number().optional(),
+  propellerTimeMax: z.coerce.number().optional(),
+  propellerSerials: z.string().min(3, 'Propeller serials are required.'),
+  propellerDetails: z.string().min(10, 'Propeller details are required.'),
+  avionics: z.string().min(10, 'Avionics details are required.'),
+  additional: z.string().optional(),
+  exteriorDetails: z.string().min(10, 'Exterior details are required.'),
+  interiorDetails: z.string().min(10, 'Interior details are required.'),
+  inspectionStatus: z.string().min(5, 'Inspection status is required.'),
+  ifr: z.string().min(3, 'IFR details are required.'),
+  youtubeLink: z.string().url('Must be a valid YouTube URL.').optional().or(z.literal('')),
 });
+
+const AIRCRAFT_TYPES = ["Airplane", "Helicopter", "Glider", "Amphibian"];
 
 export default function CreateListingPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      title: '',
-      description: '',
+      category: 'Aircraft',
+      type: '',
       images: [],
+      location: '',
+      price: undefined,
+      registration: '',
+      year: undefined,
+      manufacturer: '',
+      model: '',
+      description: '',
+      totalAirframeTime: undefined,
+      engineDetails: '',
+      propellerSerials: '',
+      propellerDetails: '',
+      avionics: '',
+      exteriorDetails: '',
+      interiorDetails: '',
+      inspectionStatus: '',
+      ifr: '',
+      youtubeLink: '',
     },
   });
 
@@ -40,85 +87,256 @@ export default function CreateListingPage() {
   };
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    if (!user) {
+      toast({ variant: 'destructive', title: 'Not Authenticated', description: 'You must be logged in to create a listing.' });
+      return;
+    }
     setIsLoading(true);
-    // Placeholder for actual submission logic (e.g., upload to Firebase Storage, save to Firestore)
-    console.log('Form values:', values);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    try {
+      await createAircraftListing(values, user.uid);
 
-    toast({
-      title: 'Listing Created!',
-      description: "Your new listing has been successfully created.",
-    });
-
-    setIsLoading(false);
-    router.push('/home');
+      toast({
+        title: 'Listing Created!',
+        description: "Your new aircraft listing has been successfully created.",
+      });
+      router.push('/home');
+    } catch (error) {
+        console.error(error);
+        toast({
+            variant: 'destructive',
+            title: 'Submission Failed',
+            description: error instanceof Error ? error.message : 'An unexpected error occurred.',
+        });
+    } finally {
+        setIsLoading(false);
+    }
   }
 
   return (
     <ProtectedRoute>
-      <div className="flex flex-col min-h-screen">
+      <div className="flex flex-col min-h-screen bg-gray-50">
         <Header />
-        <main className="flex-grow container py-8 flex items-center justify-center">
-          <Card className="w-full max-w-2xl shadow-lg">
-            <CardHeader>
-              <CardTitle className="text-2xl font-bold">Create a New Listing</CardTitle>
-              <CardDescription>Fill out the details below to post your item.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                  <FormField
-                    control={form.control}
-                    name="title"
-                    render={({ field }) => (
+        <main className="flex-grow container py-8 flex items-start justify-center">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="w-full max-w-4xl space-y-8">
+              <Card className="w-full shadow-lg">
+                <CardHeader>
+                  <CardTitle className="text-3xl font-bold">New Classified Listing</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Category and Type */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField control={form.control} name="category" render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Title</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g. Vintage Leather Jacket" {...field} />
-                        </FormControl>
+                        <FormLabel>Category</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value} disabled>
+                          <FormControl>
+                            <SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {CATEGORIES.map(cat => <SelectItem key={cat.name} value={cat.name}>{cat.name}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="description"
-                    render={({ field }) => (
+                    )} />
+                    <FormField control={form.control} name="type" render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Description</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Describe your item in detail..."
-                            className="min-h-[120px]"
-                            {...field}
-                          />
-                        </FormControl>
+                        <FormLabel>Type</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger><SelectValue placeholder="Select a type" /></SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {AIRCRAFT_TYPES.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
-                    )}
-                  />
+                    )} />
+                  </div>
+
+                  {/* Image Uploader */}
                   <FormField
                     control={form.control}
                     name="images"
-                    render={({ field }) => (
+                    render={() => (
                       <FormItem>
-                        <FormLabel>Images</FormLabel>
+                        <FormLabel>Add Photos</FormLabel>
                         <FormControl>
-                          <ImageUploader onFilesChange={handleFilesChange} maxFiles={5} />
+                          <ImageUploader onFilesChange={handleFilesChange} maxFiles={4} />
                         </FormControl>
                         <FormMessage />
+                         <p className="text-sm text-muted-foreground">Upgrade to 20 images & add YouTube video for $25</p>
                       </FormItem>
                     )}
                   />
-                  <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
-                    {isLoading ? 'Submitting...' : 'Create Listing'}
-                  </Button>
-                </form>
-              </Form>
-            </CardContent>
-          </Card>
+                  <Separator />
+
+                  {/* Core Details */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                     <FormField control={form.control} name="location" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Location</FormLabel>
+                        <FormControl><Input placeholder="City, State, Country" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                     <FormField control={form.control} name="price" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Price</FormLabel>
+                        <FormControl><Input type="number" placeholder="Enter amount" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                     <FormField control={form.control} name="registration" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Registration</FormLabel>
+                        <FormControl><Input placeholder="Enter here" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                     <FormField control={form.control} name="year" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Year</FormLabel>
+                        <FormControl><Input type="number" placeholder="Add here" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                     <FormField control={form.control} name="manufacturer" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Manufacturer</FormLabel>
+                        <FormControl><Input placeholder="Select manufacturer" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                     <FormField control={form.control} name="model" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Model</FormLabel>
+                        <FormControl><Input placeholder="Model" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  </div>
+
+                  {/* Description */}
+                  <FormField control={form.control} name="description" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description</FormLabel>
+                      <FormControl><Textarea placeholder="Describe the aircraft..." {...field} className="min-h-[150px]" /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <Separator />
+
+                  {/* Aircraft Specific Details */}
+                  <CardDescription className="font-semibold text-foreground">Aircraft Details</CardDescription>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField control={form.control} name="totalAirframeTime" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Total Airframe Time</FormLabel>
+                        <FormControl><Input type="number" placeholder="e.g., 3,100 hrs" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <div />
+                    <FormItem>
+                      <FormLabel>Engine Time</FormLabel>
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField control={form.control} name="engineTimeMin" render={({ field }) => (<FormControl><Input type="number" placeholder="Minimum" {...field} /></FormControl>)} />
+                        <FormField control={form.control} name="engineTimeMax" render={({ field }) => (<FormControl><Input type="number" placeholder="Maximum" {...field} /></FormControl>)} />
+                      </div>
+                    </FormItem>
+                     <FormField control={form.control} name="engineDetails" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Engine Details</FormLabel>
+                        <FormControl><Input placeholder="Enter here" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormItem>
+                      <FormLabel>Propeller Time</FormLabel>
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField control={form.control} name="propellerTimeMin" render={({ field }) => (<FormControl><Input type="number" placeholder="Minimum" {...field} /></FormControl>)} />
+                        <FormField control={form.control} name="propellerTimeMax" render={({ field }) => (<FormControl><Input type="number" placeholder="Maximum" {...field} /></FormControl>)} />
+                      </div>
+                    </FormItem>
+                    <FormField control={form.control} name="propellerSerials" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Propeller Serials</FormLabel>
+                            <FormControl><Input placeholder="Enter here" {...field} /></FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )} />
+                    <FormField control={form.control} name="propellerDetails" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Propeller Details</FormLabel>
+                            <FormControl><Input placeholder="Enter here" {...field} /></FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )} />
+                     <FormField control={form.control} name="avionics" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Avionics</FormLabel>
+                        <FormControl><Input placeholder="Enter here" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                     <FormField control={form.control} name="additional" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Additional</FormLabel>
+                        <FormControl><Input placeholder="Enter here" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                     <FormField control={form.control} name="exteriorDetails" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Exterior Details</FormLabel>
+                        <FormControl><Input placeholder="Enter here" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                     <FormField control={form.control} name="interiorDetails" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Interior Details</FormLabel>
+                        <FormControl><Input placeholder="Enter here" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                     <FormField control={form.control} name="inspectionStatus" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Inspection Status</FormLabel>
+                        <FormControl><Input placeholder="Enter here" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                     <FormField control={form.control} name="ifr" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>IFR</FormLabel>
+                        <FormControl><Input placeholder="Enter here" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="youtubeLink" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>YouTube Link (Optional)</FormLabel>
+                        <FormControl><Input placeholder="https://youtube.com/watch?v=..." {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <div className="flex justify-end gap-4">
+                <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>
+                <Button type="submit" disabled={isLoading} className="bg-yellow-500 hover:bg-yellow-600 text-black">
+                  {isLoading ? 'Saving...' : 'Save'}
+                </Button>
+              </div>
+            </form>
+          </Form>
         </main>
       </div>
     </ProtectedRoute>

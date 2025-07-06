@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
@@ -11,15 +11,24 @@ import {
   createUserWithEmailAndPassword,
   GoogleAuthProvider, 
   signInWithPopup,
-  sendEmailVerification
+  sendEmailVerification,
+  sendPasswordResetEmail
 } from 'firebase/auth';
 
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { auth, isFirebaseConfigured } from '@/lib/firebase';
-import { ArrowLeft, Lock, XCircle, Pencil, Eye, EyeOff, Terminal } from 'lucide-react';
+import { ArrowLeft, Lock, XCircle, ExternalLink, Eye, EyeOff, Terminal } from 'lucide-react';
 import { PublicHeader } from '@/components/PublicHeader';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { createUserProfile, checkUserExistsByEmail, type UserProfileData } from '@/services/userService';
@@ -27,6 +36,10 @@ import { createUserProfile, checkUserExistsByEmail, type UserProfileData } from 
 const formSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email.' }),
   password: z.string().min(6, { message: 'Password must be at least 6 characters.' }).optional(),
+});
+
+const forgotPasswordSchema = z.object({
+  email: z.string().email({ message: 'Please enter a valid email.' }),
 });
 
 const GoogleIcon = () => (
@@ -46,11 +59,27 @@ export default function AuthPage() {
   const [step, setStep] = useState<'email' | 'loginPassword' | 'registerPassword'>('email');
   const [email, setEmail] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: { email: '', password: '' },
   });
+
+  const forgotPasswordForm = useForm<z.infer<typeof forgotPasswordSchema>>({
+    resolver: zodResolver(forgotPasswordSchema),
+    defaultValues: {
+      email: '',
+    },
+  });
+
+  useEffect(() => {
+    if (email) {
+      forgotPasswordForm.setValue('email', email);
+    }
+  }, [email, forgotPasswordForm]);
+
 
   const onContinue = async () => {
     if (!isFirebaseConfigured || !auth) {
@@ -146,6 +175,34 @@ export default function AuthPage() {
         setIsLoading(false);
     }
   };
+
+  const handleForgotPasswordSubmit = async (values: z.infer<typeof forgotPasswordSchema>) => {
+    if (!isFirebaseConfigured || !auth) return;
+    setIsResettingPassword(true);
+    try {
+        await sendPasswordResetEmail(auth, values.email);
+        toast({
+            title: 'Password Reset Email Sent',
+            description: `A reset link has been sent to ${values.email}. Please check your inbox.`,
+        });
+        setIsForgotPasswordOpen(false);
+    } catch (error: any) {
+        let errorMessage = "An unexpected error occurred. Please try again.";
+        if (error.code === 'auth/user-not-found') {
+            errorMessage = "No account found with that email address.";
+        } else {
+            errorMessage = error.message;
+        }
+        toast({
+            variant: 'destructive',
+            title: 'Request Failed',
+            description: errorMessage,
+        });
+    } finally {
+        setIsResettingPassword(false);
+    }
+  };
+
 
   const goBack = () => {
     router.back();
@@ -251,7 +308,7 @@ export default function AuthPage() {
                                             className="absolute inset-y-0 right-0 flex items-center pr-3"
                                             aria-label="Edit email"
                                         >
-                                            <Pencil className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                                            <ExternalLink className="h-5 w-5 text-gray-400 hover:text-gray-600" />
                                         </button>
                                     )}
                                 </div>
@@ -261,33 +318,51 @@ export default function AuthPage() {
                     )}/>
                     
                     {(step === 'loginPassword' || step === 'registerPassword') && (
-                         <FormField control={form.control} name="password" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Password</FormLabel>
-                                <FormControl>
-                                    <div className="relative">
-                                        <Input 
-                                            type={showPassword ? "text" : "password"}
-                                            placeholder={step === 'loginPassword' ? "Password" : "Create Password"} 
-                                            {...field} autoFocus 
-                                        />
-                                         <button
-                                            type="button"
-                                            onClick={() => setShowPassword(!showPassword)}
-                                            className="absolute inset-y-0 right-0 flex items-center pr-3"
-                                            aria-label={showPassword ? "Hide password" : "Show password"}
-                                        >
-                                            {showPassword ? (
-                                                <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                                            ) : (
-                                                <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                                            )}
-                                        </button>
-                                    </div>
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                         )}/>
+                        <div className="space-y-2">
+                            <FormField
+                                control={form.control}
+                                name="password"
+                                render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Password</FormLabel>
+                                    <FormControl>
+                                        <div className="relative">
+                                            <Input 
+                                                type={showPassword ? "text" : "password"}
+                                                placeholder={step === 'loginPassword' ? "Password" : "Create Password"} 
+                                                {...field} autoFocus 
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowPassword(!showPassword)}
+                                                className="absolute inset-y-0 right-0 flex items-center pr-3"
+                                                aria-label={showPassword ? "Hide password" : "Show password"}
+                                            >
+                                                {showPassword ? (
+                                                    <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                                                ) : (
+                                                    <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                                                )}
+                                            </button>
+                                        </div>
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
+                            {step === 'loginPassword' && (
+                                <div className="text-right">
+                                    <Button
+                                        type="button"
+                                        variant="link"
+                                        className="p-0 h-auto text-sm text-gray-600 hover:text-primary hover:no-underline"
+                                        onClick={() => setIsForgotPasswordOpen(true)}
+                                    >
+                                        Forgot Password?
+                                    </Button>
+                                </div>
+                            )}
+                        </div>
                     )}
                     
                     <Button 
@@ -320,6 +395,42 @@ export default function AuthPage() {
             </p>
         </div>
       </main>
+
+      <Dialog open={isForgotPasswordOpen} onOpenChange={setIsForgotPasswordOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+                <DialogTitle>Reset Password</DialogTitle>
+                <DialogDescription>
+                    Enter your email below. If an account exists, we'll send a link to reset your password.
+                </DialogDescription>
+            </DialogHeader>
+            <Form {...forgotPasswordForm}>
+                <form onSubmit={forgotPasswordForm.handleSubmit(handleForgotPasswordSubmit)} className="space-y-4 pt-4">
+                    <FormField
+                        control={forgotPasswordForm.control}
+                        name="email"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Email</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="your.email@example.com" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <DialogFooter className="pt-4">
+                        <Button type="button" variant="ghost" onClick={() => setIsForgotPasswordOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button type="submit" disabled={isResettingPassword}>
+                            {isResettingPassword ? 'Sending...' : 'Send Reset Link'}
+                        </Button>
+                    </DialogFooter>
+                </form>
+            </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

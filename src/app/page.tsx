@@ -149,8 +149,8 @@ export default function AuthPage() {
   const getSubtitle = () => {
     if (step === 'email') {
       return (
-        <div className="flex items-center justify-center gap-2 text-gray-600 mb-8 text-sm text-center px-4">
-            <Lock size={16} className="flex-shrink-0"/>
+        <div className="flex items-start justify-center gap-1.5 text-gray-600 mb-8 text-sm text-center px-4">
+            <Lock size={16} className="flex-shrink-0 mt-0.5"/>
             <span>We use industry-standard encryption to keep your data safe.</span>
         </div>
       );
@@ -171,7 +171,7 @@ export default function AuthPage() {
       <PublicHeader />
       <main className="container mx-auto px-4 py-12 flex justify-center">
         <div className="w-full max-w-sm">
-            <button onClick={step === 'email' ? goBack : editEmail} className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-black mb-8">
+            <button onClick={step === 'email' ? goBack : editEmail} className="flex items-center text-sm font-medium text-gray-600 hover:text-black mb-4">
                 <ArrowLeft size={16} />
             </button>
           

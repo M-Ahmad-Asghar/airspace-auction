@@ -1,15 +1,15 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import Image from 'next/image';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -18,7 +18,9 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { ImageUploader } from '@/components/ImageUploader';
 import { createAircraftListing } from '@/services/listingService';
-import { CATEGORIES } from '@/lib/constants';
+import { getYoutubeVideoDetails, type YoutubeVideoDetails } from '@/services/youtubeService';
+import { CATEGORIES, AIRCRAFT_TYPES, AIRCRAFT_MANUFACTURERS, AIRCRAFT_MODELS } from '@/lib/constants';
+import { Loader2, Video } from 'lucide-react';
 
 const formSchema = z.object({
   category: z.string().min(1, 'Category is required.'),
@@ -48,45 +50,13 @@ const formSchema = z.object({
   youtubeLink: z.string().url('Must be a valid YouTube URL.').optional().or(z.literal('')),
 });
 
-const AIRCRAFT_TYPES = [
-  "Piston Single",
-  "Piston Twin",
-  "Warbird",
-  "Turboprop",
-  "Tailwheel",
-  "Antique/Classic",
-  "Rotorcraft",
-  "Agricultural",
-  "Trainer",
-  "IFR Certified",
-  "Light Sport",
-  "Lighter than Air",
-  "Special Use",
-  "Jets",
-  "Gliders/Sailplanes",
-];
-
-const AIRCRAFT_MANUFACTURERS = [
-  "Cessna",
-  "Piper",
-  "Beechcraft",
-  "Boeing",
-  "Airbus",
-  "Bombardier",
-  "Embraer",
-  "Cirrus",
-  "Diamond",
-  "Mooney",
-  "Pilatus",
-  "Daher",
-];
-
-
 export default function CreateListingPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [youtubeDetails, setYoutubeDetails] = useState<YoutubeVideoDetails | null>(null);
+  const [isFetchingYoutube, setIsFetchingYoutube] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -113,6 +83,51 @@ export default function CreateListingPage() {
       youtubeLink: '',
     },
   });
+
+  const youtubeLinkValue = useWatch({
+    control: form.control,
+    name: 'youtubeLink',
+  });
+
+  const extractVideoId = (url: string): string | null => {
+      if (!url) return null;
+      const regex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+      const match = url.match(regex);
+      return match ? match[1] : null;
+  };
+
+  const fetchDetails = useCallback(async (link: string) => {
+    const videoId = extractVideoId(link);
+    if (videoId) {
+      setIsFetchingYoutube(true);
+      setYoutubeDetails(null);
+      try {
+        const details = await getYoutubeVideoDetails(videoId);
+        setYoutubeDetails(details);
+      } catch (error) {
+        console.error("Failed to fetch YouTube details", error);
+        setYoutubeDetails(null);
+      } finally {
+        setIsFetchingYoutube(false);
+      }
+    } else {
+      setYoutubeDetails(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      const { isDirty } = form.getFieldState('youtubeLink');
+      if (youtubeLinkValue && isDirty) {
+        fetchDetails(youtubeLinkValue);
+      } else if (!youtubeLinkValue) {
+        setYoutubeDetails(null);
+      }
+    }, 1000);
+
+    return () => clearTimeout(handler);
+  }, [youtubeLinkValue, fetchDetails, form]);
+
 
   const handleFilesChange = (files: File[]) => {
     form.setValue('images', files, { shouldValidate: true });
@@ -152,224 +167,240 @@ export default function CreateListingPage() {
         <main className="flex-grow container mx-auto px-4 py-10">
           <div className="w-full max-w-5xl mx-auto">
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                <Card className="w-full border-gray-200">
-                  <CardHeader>
-                    <CardTitle className="text-3xl font-bold">New Classified Listing</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-8">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                      <FormField control={form.control} name="category" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Category</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value} disabled>
-                            <FormControl>
-                              <SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {CATEGORIES.map(cat => <SelectItem key={cat.name} value={cat.name}>{cat.name}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
-                      <FormField control={form.control} name="type" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Type</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger><SelectValue placeholder="Select a type" /></SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {AIRCRAFT_TYPES.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
-                    </div>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-12">
+                
+                <div className="space-y-8">
+                  <h1 className="text-3xl font-bold">New Classified Listing</h1>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                    <FormField control={form.control} name="category" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Category</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value} disabled>
+                          <FormControl>
+                            <SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {CATEGORIES.map(cat => <SelectItem key={cat.name} value={cat.name}>{cat.name}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="type" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Type</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger><SelectValue placeholder="Select a type" /></SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {AIRCRAFT_TYPES.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  </div>
+                </div>
 
-                    <div className="pt-8 border-t">
-                      <FormField
-                        control={form.control}
-                        name="images"
-                        render={() => (
-                          <FormItem>
-                            <FormLabel>Add Photos</FormLabel>
-                            <FormControl>
-                              <ImageUploader onFilesChange={handleFilesChange} maxFiles={4} />
-                            </FormControl>
-                            <FormMessage />
-                            <p className="text-sm text-muted-foreground">Upgrade to 20 images & add YouTube video for $25</p>
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 pt-8 border-t">
-                      <FormField control={form.control} name="location" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Location</FormLabel>
-                          <FormControl><Input placeholder="City, State, Country" {...field} /></FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
-                      <FormField control={form.control} name="price" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Price</FormLabel>
-                          <FormControl><Input type="number" placeholder="Enter amount" {...field} /></FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
-                      <FormField control={form.control} name="registration" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Registration</FormLabel>
-                          <FormControl><Input placeholder="Enter here" {...field} /></FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
-                      <FormField control={form.control} name="year" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Year</FormLabel>
-                          <FormControl><Input type="number" placeholder="Add here" {...field} /></FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
-                      <FormField control={form.control} name="manufacturer" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Manufacturer</FormLabel>
-                           <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger><SelectValue placeholder="Select manufacturer" /></SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {AIRCRAFT_MANUFACTURERS.map(manufacturer => <SelectItem key={manufacturer} value={manufacturer}>{manufacturer}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
-                      <FormField control={form.control} name="model" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Model</FormLabel>
-                          <FormControl><Input placeholder="Model" {...field} /></FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
-                    </div>
+                <div className="pt-8 border-t">
+                  <FormField
+                    control={form.control}
+                    name="images"
+                    render={() => (
+                      <FormItem>
+                        <FormLabel>Add Photos</FormLabel>
+                        <FormControl>
+                          <ImageUploader onFilesChange={handleFilesChange} maxFiles={4} />
+                        </FormControl>
+                        <FormMessage />
+                        <p className="text-sm text-muted-foreground">Upgrade to 20 images & add YouTube video for $25</p>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 pt-8 border-t">
+                  <FormField control={form.control} name="location" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Location</FormLabel>
+                      <FormControl><Input placeholder="City, State, Country" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="price" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Price</FormLabel>
+                      <FormControl><Input type="number" placeholder="Enter amount" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="registration" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Registration</FormLabel>
+                      <FormControl><Input placeholder="Enter here" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="year" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Year</FormLabel>
+                      <FormControl><Input type="number" placeholder="Add here" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="manufacturer" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Manufacturer</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger><SelectValue placeholder="Select manufacturer" /></SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {AIRCRAFT_MANUFACTURERS.map(manufacturer => <SelectItem key={manufacturer} value={manufacturer}>{manufacturer}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="model" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Model</FormLabel>
+                       <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger><SelectValue placeholder="Select a model" /></SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {AIRCRAFT_MODELS.map(model => <SelectItem key={model} value={model}>{model}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                </div>
 
-                    <div className="pt-8 border-t">
-                        <FormField control={form.control} name="description" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Description</FormLabel>
-                            <FormControl><Textarea placeholder="Describe the aircraft..." {...field} className="min-h-[150px]" /></FormControl>
-                            <FormMessage />
-                        </FormItem>
-                        )} />
-                    </div>
+                <div className="pt-8 border-t">
+                    <FormField control={form.control} name="description" render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Description</FormLabel>
+                        <FormControl><Textarea placeholder="Describe the aircraft..." {...field} className="min-h-[150px]" /></FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )} />
+                </div>
+                
+                <div className="space-y-8 pt-8 border-t">
+                  <h3 className="text-xl font-semibold text-foreground">Aircraft Details</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                    <FormField control={form.control} name="totalAirframeTime" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Total Airframe Time</FormLabel>
+                        <FormControl><Input type="number" placeholder="e.g., 3,100 hrs" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <div />
                     
-                    <div className="space-y-6 pt-8 border-t">
-                      <h3 className="text-xl font-semibold text-foreground">Aircraft Details</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                        <FormField control={form.control} name="totalAirframeTime" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Total Airframe Time</FormLabel>
-                            <FormControl><Input type="number" placeholder="e.g., 3,100 hrs" {...field} /></FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )} />
-                        <div />
-                        
+                    <FormItem>
+                      <FormLabel>Engine Time</FormLabel>
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField control={form.control} name="engineTimeMin" render={({ field }) => (<FormItem><FormControl><Input type="number" placeholder="Minimum" {...field} /></FormControl><FormMessage/></FormItem>)} />
+                        <FormField control={form.control} name="engineTimeMax" render={({ field }) => (<FormItem><FormControl><Input type="number" placeholder="Maximum" {...field} /></FormControl><FormMessage/></FormItem>)} />
+                      </div>
+                    </FormItem>
+                    <FormField control={form.control} name="engineDetails" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Engine Details</FormLabel>
+                        <FormControl><Input placeholder="Enter here" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormItem>
+                      <FormLabel>Propeller Time</FormLabel>
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField control={form.control} name="propellerTimeMin" render={({ field }) => (<FormItem><FormControl><Input type="number" placeholder="Minimum" {...field} /></FormControl><FormMessage/></FormItem>)} />
+                        <FormField control={form.control} name="propellerTimeMax" render={({ field }) => (<FormItem><FormControl><Input type="number" placeholder="Maximum" {...field} /></FormControl><FormMessage/></FormItem>)} />
+                      </div>
+                    </FormItem>
+                    <FormField control={form.control} name="propellerSerials" render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Engine Time</FormLabel>
-                          <div className="grid grid-cols-2 gap-4">
-                            <FormField control={form.control} name="engineTimeMin" render={({ field }) => (<FormItem><FormControl><Input type="number" placeholder="Minimum" {...field} /></FormControl><FormMessage/></FormItem>)} />
-                            <FormField control={form.control} name="engineTimeMax" render={({ field }) => (<FormItem><FormControl><Input type="number" placeholder="Maximum" {...field} /></FormControl><FormMessage/></FormItem>)} />
-                          </div>
-                        </FormItem>
-                        <FormField control={form.control} name="engineDetails" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Engine Details</FormLabel>
+                            <FormLabel>Propeller Serials</FormLabel>
                             <FormControl><Input placeholder="Enter here" {...field} /></FormControl>
                             <FormMessage />
-                          </FormItem>
-                        )} />
-                        <FormItem>
-                          <FormLabel>Propeller Time</FormLabel>
-                          <div className="grid grid-cols-2 gap-4">
-                            <FormField control={form.control} name="propellerTimeMin" render={({ field }) => (<FormItem><FormControl><Input type="number" placeholder="Minimum" {...field} /></FormControl><FormMessage/></FormItem>)} />
-                            <FormField control={form.control} name="propellerTimeMax" render={({ field }) => (<FormItem><FormControl><Input type="number" placeholder="Maximum" {...field} /></FormControl><FormMessage/></FormItem>)} />
-                          </div>
                         </FormItem>
-                        <FormField control={form.control} name="propellerSerials" render={({ field }) => (
+                    )} />
+                    <div className="md:col-span-2">
+                        <FormField control={form.control} name="propellerDetails" render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Propeller Serials</FormLabel>
+                                <FormLabel>Propeller Details</FormLabel>
                                 <FormControl><Input placeholder="Enter here" {...field} /></FormControl>
                                 <FormMessage />
                             </FormItem>
                         )} />
-                        <div className="md:col-span-2">
-                           <FormField control={form.control} name="propellerDetails" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Propeller Details</FormLabel>
-                                    <FormControl><Input placeholder="Enter here" {...field} /></FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )} />
-                        </div>
-                        <FormField control={form.control} name="avionics" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Avionics</FormLabel>
-                            <FormControl><Input placeholder="Enter here" {...field} /></FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )} />
-                        <FormField control={form.control} name="additional" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Additional</FormLabel>
-                            <FormControl><Input placeholder="Enter here" {...field} /></FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )} />
-                        <FormField control={form.control} name="exteriorDetails" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Exterior Details</FormLabel>
-                            <FormControl><Input placeholder="Enter here" {...field} /></FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )} />
-                        <FormField control={form.control} name="interiorDetails" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Interior Details</FormLabel>
-                            <FormControl><Input placeholder="Enter here" {...field} /></FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )} />
-                        <FormField control={form.control} name="inspectionStatus" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Inspection Status</FormLabel>
-                            <FormControl><Input placeholder="Enter here" {...field} /></FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )} />
-                        <FormField control={form.control} name="ifr" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>IFR</FormLabel>
-                            <FormControl><Input placeholder="Enter here" {...field} /></FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )} />
-                        <FormField control={form.control} name="youtubeLink" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>YouTube Link (Optional)</FormLabel>
-                            <FormControl><Input placeholder="https://youtube.com/watch?v=..." {...field} /></FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )} />
-                      </div>
                     </div>
-                  </CardContent>
-                </Card>
+                    <FormField control={form.control} name="avionics" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Avionics</FormLabel>
+                        <FormControl><Input placeholder="Enter here" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="additional" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Additional</FormLabel>
+                        <FormControl><Input placeholder="Enter here" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="exteriorDetails" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Exterior Details</FormLabel>
+                        <FormControl><Input placeholder="Enter here" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="interiorDetails" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Interior Details</FormLabel>
+                        <FormControl><Input placeholder="Enter here" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="inspectionStatus" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Inspection Status</FormLabel>
+                        <FormControl><Input placeholder="Enter here" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="ifr" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>IFR</FormLabel>
+                        <FormControl><Input placeholder="Enter here" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="youtubeLink" render={({ field }) => (
+                      <FormItem className="md:col-span-2">
+                        <FormLabel>YouTube Link (Optional)</FormLabel>
+                        <FormControl><Input placeholder="https://youtube.com/watch?v=..." {...field} /></FormControl>
+                        <FormMessage />
+                         {isFetchingYoutube && <div className="flex items-center text-sm text-muted-foreground pt-2"><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Fetching video details...</div>}
+                         {youtubeDetails && (
+                            <div className="mt-4 flex gap-4 items-center rounded-lg border p-3">
+                                <div className="relative h-24 w-32 flex-shrink-0">
+                                <Image src={youtubeDetails.thumbnailUrl} alt={youtubeDetails.title} layout="fill" objectFit="cover" className="rounded-md" />
+                                </div>
+                                <div>
+                                <p className="font-semibold">{youtubeDetails.title}</p>
+                                <p className="text-sm text-muted-foreground">{youtubeDetails.author}</p>
+                                </div>
+                            </div>
+                        )}
+                      </FormItem>
+                    )} />
+                  </div>
+                </div>
 
                 <div className="flex justify-end gap-4">
                   <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>

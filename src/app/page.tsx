@@ -68,7 +68,7 @@ export default async function HomePage({ searchParams }: { searchParams?: { cate
   return (
       <div className="flex flex-col min-h-screen">
         <Header />
-        <main className="flex-grow container py-8">
+        <main className="flex-grow container mx-auto px-4 py-8">
             <div className="flex justify-between items-center mb-6">
               <h1 className="text-3xl font-bold">{category ? `${category} Listings` : 'Recent Listings'}</h1>
               {category && (

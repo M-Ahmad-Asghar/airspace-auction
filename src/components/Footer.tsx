@@ -76,7 +76,7 @@ export function Footer() {
   ];
 
   return (
-    <footer className="bg-muted text-muted-foreground mt-auto">
+    <footer className="bg-muted mt-auto">
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Column 1: Logo and Contact */}
@@ -84,7 +84,7 @@ export function Footer() {
             <Link href="/">
               <Logo className="h-8 w-auto" />
             </Link>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 text-foreground">
               <Mail className="h-5 w-5" />
               <a href="mailto:Ops@airplanedeals.com" className="hover:underline text-sm">
                 Ops@airplanedeals.com
@@ -92,7 +92,7 @@ export function Footer() {
             </div>
             <div className="flex space-x-3">
               {socialLinks.map((social, index) => (
-                <Link key={index} href={social.href} className="text-muted-foreground hover:text-foreground">
+                <Link key={index} href={social.href} className="text-foreground hover:text-primary">
                   <social.icon className="h-6 w-6" />
                 </Link>
               ))}
@@ -101,10 +101,10 @@ export function Footer() {
               <h4 className="font-bold text-foreground mb-4 text-sm">SHOP FASTER WITH THE APP</h4>
               <div className="flex gap-2">
                 <Link href="#">
-                  <Image src="https://placehold.co/135x40.png" alt="Get it on Google Play" width={135} height={40} data-ai-hint="google play" />
+                  <Image src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Get it on Google Play" width={135} height={40} />
                 </Link>
                 <Link href="#">
-                  <Image src="https://placehold.co/120x40.png" alt="Download on the App Store" width={120} height={40} data-ai-hint="app store" />
+                  <Image src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" alt="Download on the App Store" width={120} height={40} />
                 </Link>
               </div>
             </div>
@@ -117,7 +117,7 @@ export function Footer() {
               <ul className="space-y-3">
                 {section.links.map((link) => (
                   <li key={link.name}>
-                    <Link href={link.href} className="hover:underline text-sm">
+                    <Link href={link.href} className="hover:underline text-sm text-foreground">
                       {link.name}
                     </Link>
                   </li>
@@ -128,7 +128,7 @@ export function Footer() {
         </div>
       </div>
       <div className="border-t border-gray-300">
-        <div className="container mx-auto px-4 py-6 text-center text-xs">
+        <div className="container mx-auto px-4 py-6 text-center text-xs text-muted-foreground">
           © {new Date().getFullYear()} Airplane Deals. All Rights Reserved.
         </div>
       </div>

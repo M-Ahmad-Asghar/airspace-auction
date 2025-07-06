@@ -10,8 +10,7 @@ import {
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword,
   GoogleAuthProvider, 
-  signInWithPopup,
-  fetchSignInMethodsForEmail
+  signInWithPopup
 } from 'firebase/auth';
 
 import { Button } from '@/components/ui/button';
@@ -22,7 +21,7 @@ import { auth, isFirebaseConfigured } from '@/lib/firebase';
 import { ArrowLeft, Lock, XCircle, Pencil, Eye, EyeOff, Terminal } from 'lucide-react';
 import { PublicHeader } from '@/components/PublicHeader';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { createUserProfile, type UserProfileData } from '@/services/userService';
+import { createUserProfile, checkUserExistsByEmail, type UserProfileData } from '@/services/userService';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email.' }),
@@ -71,10 +70,9 @@ export default function AuthPage() {
     setIsLoading(true);
 
     try {
-      const methods = await fetchSignInMethodsForEmail(auth, emailValue);
+      const userExists = await checkUserExistsByEmail(emailValue);
       setEmail(emailValue);
-      
-      if (methods.length > 0) {
+      if (userExists) {
         setStep('loginPassword');
       } else {
         setStep('registerPassword');
@@ -112,6 +110,7 @@ export default function AuthPage() {
           errorMessage = 'Invalid password. Please try again.';
         } else if (error.code === 'auth/email-already-in-use') {
           errorMessage = 'This email is already registered. Please log in.';
+          setStep('loginPassword');
         } else {
           errorMessage = error.message;
         }

@@ -1,7 +1,7 @@
 'use server';
 
 import { db, isFirebaseConfigured } from '@/lib/firebase';
-import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp, collection, query, where, getDocs, limit } from 'firebase/firestore';
 
 export interface UserProfileData {
   uid: string;
@@ -9,6 +9,31 @@ export interface UserProfileData {
   displayName: string | null;
   photoURL: string | null;
 }
+
+/**
+ * Checks if a user exists in the Firestore 'users' collection by email.
+ * @param email The email to check.
+ * @returns A boolean indicating if the user exists.
+ */
+export async function checkUserExistsByEmail(email: string): Promise<boolean> {
+  if (!isFirebaseConfigured || !db) {
+    console.error('Firebase is not configured. Cannot check user existence.');
+    // To be safe, we prevent login/registration if DB is not configured.
+    throw new Error('Database is not configured.');
+  }
+  
+  try {
+    const usersCollectionRef = collection(db, 'users');
+    const q = query(usersCollectionRef, where('email', '==', email), limit(1));
+    const querySnapshot = await getDocs(q);
+    return !querySnapshot.empty;
+  } catch (error) {
+    console.error('Error checking if user exists by email:', error);
+    // Propagate the error to be handled by the UI.
+    throw new Error('Failed to check user existence in Firestore.');
+  }
+}
+
 
 /**
  * Creates a user profile document in Firestore if it doesn't already exist.

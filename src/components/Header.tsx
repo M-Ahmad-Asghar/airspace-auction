@@ -95,8 +95,7 @@ export function Header() {
                 </DropdownMenu>
             ) : (
                 <Button onClick={() => router.push('/login')} disabled={!isFirebaseConfigured}>
-                    <Plus size={16} className="mr-1 md:mr-2"/>
-                    Post
+                    Login
                 </Button>
             )}
 

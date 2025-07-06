@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, Mic, Plus, MessageSquare, User } from 'lucide-react';
+import { Search, Mic, MessageSquare } from 'lucide-react';
 import { Logo } from './Logo';
 import { CATEGORIES } from '@/lib/constants';
 
@@ -31,17 +31,11 @@ export function PublicHeader() {
           <div className="flex items-center gap-2">
             <Button asChild>
               <Link href="/login">
-                <Plus size={16} className="mr-1 md:mr-2"/>
-                Post
+                Login
               </Link>
             </Button>
             <Button variant="ghost" size="icon" className="hidden sm:inline-flex">
                 <MessageSquare />
-            </Button>
-            <Button variant="ghost" size="icon" asChild>
-              <Link href="/login">
-                <User />
-              </Link>
             </Button>
           </div>
         </div>

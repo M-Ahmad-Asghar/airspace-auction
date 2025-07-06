@@ -48,7 +48,39 @@ const formSchema = z.object({
   youtubeLink: z.string().url('Must be a valid YouTube URL.').optional().or(z.literal('')),
 });
 
-const AIRCRAFT_TYPES = ["Airplane", "Helicopter", "Glider", "Amphibian"];
+const AIRCRAFT_TYPES = [
+  "Piston Single",
+  "Piston Twin",
+  "Warbird",
+  "Turboprop",
+  "Tailwheel",
+  "Antique/Classic",
+  "Rotorcraft",
+  "Agricultural",
+  "Trainer",
+  "IFR Certified",
+  "Light Sport",
+  "Lighter than Air",
+  "Special Use",
+  "Jets",
+  "Gliders/Sailplanes",
+];
+
+const AIRCRAFT_MANUFACTURERS = [
+  "Cessna",
+  "Piper",
+  "Beechcraft",
+  "Boeing",
+  "Airbus",
+  "Bombardier",
+  "Embraer",
+  "Cirrus",
+  "Diamond",
+  "Mooney",
+  "Pilatus",
+  "Daher",
+];
+
 
 export default function CreateListingPage() {
   const router = useRouter();
@@ -206,7 +238,14 @@ export default function CreateListingPage() {
                       <FormField control={form.control} name="manufacturer" render={({ field }) => (
                         <FormItem>
                           <FormLabel>Manufacturer</FormLabel>
-                          <FormControl><Input placeholder="Select manufacturer" {...field} /></FormControl>
+                           <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger><SelectValue placeholder="Select manufacturer" /></SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {AIRCRAFT_MANUFACTURERS.map(manufacturer => <SelectItem key={manufacturer} value={manufacturer}>{manufacturer}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )} />

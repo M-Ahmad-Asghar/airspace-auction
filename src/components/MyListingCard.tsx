@@ -1,8 +1,11 @@
 
+"use client";
+
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FilePenLine, Trash2 } from 'lucide-react';
+import { FilePenLine, Trash2, Loader2 } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,7 +16,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
+import { CATEGORIES } from '@/lib/constants';
 
 
 interface MyListingCardProps {
@@ -23,19 +27,26 @@ interface MyListingCardProps {
     description: string;
     imageUrl: string;
     imageHint: string;
+    category: string;
   };
+  onDelete: (listingId: string) => Promise<void>;
+  isDeleting: boolean;
 }
 
-export function MyListingCard({ listing }: MyListingCardProps) {
+export function MyListingCard({ listing, onDelete, isDeleting }: MyListingCardProps) {
+  const router = useRouter();
   
   const handleEdit = () => {
-    // TODO: Implement navigation to the edit page
-    console.log("Edit listing:", listing.id);
+    const categoryInfo = CATEGORIES.find(c => c.name === listing.category);
+    if (categoryInfo) {
+      router.push(`${categoryInfo.href}?id=${listing.id}`);
+    } else {
+      console.error(`Could not find category info for: ${listing.category}`);
+    }
   };
 
   const handleDelete = () => {
-    // TODO: Implement delete functionality
-    console.log("Delete listing:", listing.id);
+    onDelete(listing.id);
   };
 
   return (
@@ -66,8 +77,12 @@ export function MyListingCard({ listing }: MyListingCardProps) {
             </Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="destructive" size="sm">
-                  <Trash2 className="mr-2 h-4 w-4" />
+                <Button variant="destructive" size="sm" disabled={isDeleting}>
+                  {isDeleting ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="mr-2 h-4 w-4" />
+                  )}
                   Delete
                 </Button>
               </AlertDialogTrigger>
@@ -81,7 +96,9 @@ export function MyListingCard({ listing }: MyListingCardProps) {
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDelete}>Continue</AlertDialogAction>
+                  <AlertDialogAction onClick={handleDelete} disabled={isDeleting}>
+                    {isDeleting ? 'Deleting...' : 'Continue'}
+                  </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>

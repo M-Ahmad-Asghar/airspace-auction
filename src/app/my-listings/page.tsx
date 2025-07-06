@@ -4,63 +4,59 @@
 import { useState, useEffect } from 'react';
 import type { DocumentData } from 'firebase/firestore';
 import { useAuth } from '@/hooks/useAuth';
-import { getListingsByUserId } from '@/services/listingService';
+import { getListingsByUserId, deleteListing } from '@/services/listingService';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Header } from '@/components/Header';
 import { MyListingCard } from '@/components/MyListingCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { useToast } from '@/hooks/use-toast';
 
 function formatListingData(listing: DocumentData) {
+    const commonData = {
+        id: listing.id,
+        description: listing.description,
+        imageUrl: listing.imageUrls?.[0] || 'https://placehold.co/600x400.png',
+        category: listing.category,
+    };
+    
     if (listing.category === 'Aircraft') {
       return {
-          id: listing.id,
+          ...commonData,
           title: `${listing.year} ${listing.manufacturer} ${listing.model}`,
-          description: listing.description,
-          imageUrl: listing.imageUrls?.[0] || 'https://placehold.co/600x400.png',
           imageHint: `${listing.manufacturer} ${listing.model}`
       };
     } else if (listing.category === 'Events') {
       return {
-          id: listing.id,
+          ...commonData,
           title: listing.title || 'Event Listing',
-          description: listing.description,
-          imageUrl: listing.imageUrls?.[0] || 'https://placehold.co/600x400.png',
           imageHint: 'event concert'
       };
     } else if (listing.category === 'Real Estate') {
       return {
-          id: listing.id,
+          ...commonData,
           title: listing.title || 'Real Estate Listing',
-          description: listing.description,
-          imageUrl: listing.imageUrls?.[0] || 'https://placehold.co/600x400.png',
           imageHint: 'real estate house'
       };
     } else if (listing.category === 'Places') {
       return {
-          id: listing.id,
+          ...commonData,
           title: listing.title || 'Place Listing',
-          description: listing.description,
-          imageUrl: listing.imageUrls?.[0] || 'https://placehold.co/600x400.png',
           imageHint: 'travel destination'
       };
     } else if (listing.category === 'Services') {
       return {
-          id: listing.id,
+          ...commonData,
           title: listing.title || 'Service Listing',
-          description: listing.description,
-          imageUrl: listing.imageUrls?.[0] || 'https://placehold.co/600x400.png',
           imageHint: 'professional service'
       };
     }
     
     // Default formatter for Parts and other categories
     return {
-        id: listing.id,
+        ...commonData,
         title: listing.title || `${listing.manufacturer} Part`,
-        description: listing.description,
-        imageUrl: listing.imageUrls?.[0] || 'https://placehold.co/600x400.png',
         imageHint: `${listing.manufacturer} part`
     };
 }
@@ -68,31 +64,41 @@ function formatListingData(listing: DocumentData) {
 
 export default function MyListingsPage() {
     const { user, loading: authLoading } = useAuth();
-    const [listings, setListings] = useState<DocumentData[]>([]);
+    const { toast } = useToast();
+    const [listings, setListings] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [deletingId, setDeletingId] = useState<string | null>(null);
 
     useEffect(() => {
         if (user) {
             setLoading(true);
             getListingsByUserId(user.uid)
                 .then(data => {
-                    // Sort data by creation time, newest first.
-                    // The 'createdAt' field is a Firestore Timestamp object.
-                    const sortedData = [...data].sort((a, b) => {
-                        const timeA = a.createdAt?.seconds || 0;
-                        const timeB = b.createdAt?.seconds || 0;
-                        return timeB - timeA;
-                    });
+                    const sortedData = [...data].sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
                     const formattedData = sortedData.map(formatListingData);
                     setListings(formattedData);
-                    setLoading(false);
                 })
                 .catch(error => {
                     console.error("Failed to fetch user listings", error);
-                    setLoading(false);
-                });
+                    toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch your listings.' });
+                })
+                .finally(() => setLoading(false));
         }
-    }, [user]);
+    }, [user, toast]);
+
+    const handleDelete = async (listingId: string) => {
+        setDeletingId(listingId);
+        try {
+            await deleteListing(listingId);
+            setListings(prev => prev.filter(l => l.id !== listingId));
+            toast({ title: 'Success', description: 'Listing deleted successfully.' });
+        } catch (error) {
+            console.error("Failed to delete listing", error);
+            toast({ variant: 'destructive', title: 'Error', description: 'Failed to delete listing.' });
+        } finally {
+            setDeletingId(null);
+        }
+    };
 
     const isLoading = authLoading || loading;
 
@@ -116,7 +122,12 @@ export default function MyListingsPage() {
                     ) : listings.length > 0 ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
                             {listings.map(listing => (
-                                <MyListingCard key={listing.id} listing={listing} />
+                                <MyListingCard 
+                                    key={listing.id} 
+                                    listing={listing} 
+                                    onDelete={handleDelete}
+                                    isDeleting={deletingId === listing.id}
+                                />
                             ))}
                         </div>
                     ) : (

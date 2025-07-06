@@ -1,8 +1,8 @@
 
 "use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -18,7 +18,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { ImageUploader } from '@/components/ImageUploader';
-import { createEventListing } from '@/services/listingService';
+import { createEventListing, getListingById, updateListing } from '@/services/listingService';
 import { CATEGORIES } from '@/lib/constants';
 import { Loader2, MapPin, Info, Calendar as CalendarIcon, ChevronDown } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
@@ -29,7 +29,7 @@ const eventFormSchema = z.object({
   category: z.string().min(1, 'Category is required.'),
   title: z.string().min(5, 'Title must be at least 5 characters.'),
   description: z.string().min(20, 'Description must be at least 20 characters.'),
-  images: z.array(z.instanceof(File)).min(1, 'Please upload at least one image.').max(4, 'You can upload a maximum of 4 images.'),
+  images: z.any().refine(files => files?.length >= 1, 'Please upload at least one image.').refine(files => files?.length <= 4, 'You can upload a maximum of 4 images.'),
   location: z.string().min(3, 'Location is required.'),
   date: z.date({ required_error: "An event date is required." }),
   price: z.coerce.number().positive('Price must be a positive number.'),
@@ -38,9 +38,14 @@ const eventFormSchema = z.object({
 
 export default function CreateEventListingPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const listingId = searchParams.get('id');
+  const isEditMode = !!listingId;
+
   const { toast } = useToast();
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [existingImages, setExistingImages] = useState<string[]>([]);
 
   const form = useForm<z.infer<typeof eventFormSchema>>({
     resolver: zodResolver(eventFormSchema),
@@ -55,7 +60,28 @@ export default function CreateEventListingPage() {
     },
   });
 
-  const handleFilesChange = (files: File[]) => {
+  useEffect(() => {
+    if (isEditMode && listingId) {
+      setIsLoading(true);
+      getListingById(listingId)
+        .then(listing => {
+          if (listing && user && listing.userId === user.uid) {
+            form.reset(listing);
+            if (listing.imageUrls) {
+              setExistingImages(listing.imageUrls);
+              form.setValue('images', listing.imageUrls);
+            }
+          } else {
+             toast({ variant: 'destructive', title: 'Error', description: 'Listing not found or you do not have permission to edit it.' });
+             router.push('/my-listings');
+          }
+        })
+        .catch(() => toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch listing details.' }))
+        .finally(() => setIsLoading(false));
+    }
+  }, [isEditMode, listingId, form, toast, router, user]);
+
+  const handleFilesChange = (files: (File | string)[]) => {
     form.setValue('images', files, { shouldValidate: true });
   };
 
@@ -67,17 +93,19 @@ export default function CreateEventListingPage() {
     setIsLoading(true);
 
     try {
-      await createEventListing(values, user.uid);
-      toast({
-        title: 'Listing Created!',
-        description: "Your new event listing has been successfully created.",
-      });
-      router.push('/');
+      if (isEditMode && listingId) {
+        await updateListing(listingId, values, user.uid);
+        toast({ title: 'Success!', description: "Your listing has been updated." });
+      } else {
+        await createEventListing(values, user.uid);
+        toast({ title: 'Listing Created!', description: "Your new event listing has been successfully created." });
+      }
+      router.push('/my-listings');
     } catch (error) {
       console.error(error);
       toast({
         variant: 'destructive',
-        title: 'Submission Failed',
+        title: isEditMode ? 'Update Failed' : 'Submission Failed',
         description: error instanceof Error ? error.message : 'An unexpected error occurred.',
       });
     } finally {
@@ -92,7 +120,7 @@ export default function CreateEventListingPage() {
         <main className="flex-grow container mx-auto px-4 py-10">
           <div className="w-full max-w-5xl mx-auto">
             <div className="mb-10">
-              <h1 className="text-3xl font-bold">New Classified Listing</h1>
+              <h1 className="text-3xl font-bold">{isEditMode ? 'Edit Listing' : 'New Classified Listing'}</h1>
             </div>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-12">
@@ -120,7 +148,7 @@ export default function CreateEventListingPage() {
                       <FormItem>
                          <FormLabel className="text-base font-semibold">Add Photos</FormLabel>
                         <FormControl>
-                          <ImageUploader onFilesChange={handleFilesChange} maxFiles={4} />
+                          <ImageUploader onFilesChange={handleFilesChange} maxFiles={4} existingImages={existingImages} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -230,7 +258,7 @@ export default function CreateEventListingPage() {
                 <div className="flex justify-end gap-4 pt-8 border-t">
                   <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>
                   <Button type="submit" disabled={isLoading} size="lg">
-                    {isLoading ? (<> <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving... </>) : 'Save'}
+                    {isLoading ? (<> <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving... </>) : isEditMode ? 'Update Listing' : 'Save'}
                   </Button>
                 </div>
               </form>

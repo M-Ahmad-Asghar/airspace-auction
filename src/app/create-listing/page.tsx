@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -17,8 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { ImageUploader } from '@/components/ImageUploader';
-import { createAircraftListing } from '@/services/listingService';
-import { getYoutubeVideoDetails, type YoutubeVideoDetails } from '@/services/youtubeService';
+import { createAircraftListing, getYoutubeVideoDetails, type YoutubeVideoDetails, getListingById, updateListing } from '@/services/listingService';
 import { CATEGORIES, AIRCRAFT_TYPES, AIRCRAFT_MANUFACTURERS, AIRCRAFT_MODELS } from '@/lib/constants';
 import { Loader2, AlertCircle, X } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -27,7 +26,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 const formSchema = z.object({
   category: z.string().min(1, 'Category is required.'),
   type: z.string().min(1, 'Type is required.'),
-  images: z.array(z.instanceof(File)).min(1, 'Please upload at least one image.').max(4, 'You can upload a maximum of 4 images.'),
+  images: z.any().refine(files => files?.length >= 1, 'Please upload at least one image.').refine(files => files?.length <= 4, 'You can upload a maximum of 4 images.'),
   location: z.string().min(3, 'Location is required.'),
   price: z.coerce.number().positive('Price must be a positive number.'),
   registration: z.string().min(1, 'Registration is required.'),
@@ -55,12 +54,17 @@ const formSchema = z.object({
 
 export default function CreateListingPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const listingId = searchParams.get('id');
+  const isEditMode = !!listingId;
+
   const { toast } = useToast();
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [youtubeDetails, setYoutubeDetails] = useState<YoutubeVideoDetails | null>(null);
   const [isFetchingYoutube, setIsFetchingYoutube] = useState(false);
   const [showDescriptionInfo, setShowDescriptionInfo] = useState(true);
+  const [existingImages, setExistingImages] = useState<string[]>([]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -88,6 +92,28 @@ export default function CreateListingPage() {
       youtubeLink: '',
     },
   });
+
+  useEffect(() => {
+    if (isEditMode && listingId) {
+      setIsLoading(true);
+      getListingById(listingId)
+        .then(listing => {
+          if (listing && user && listing.userId === user.uid) {
+            form.reset(listing);
+            if (listing.imageUrls) {
+              setExistingImages(listing.imageUrls);
+              form.setValue('images', listing.imageUrls);
+            }
+          } else {
+             toast({ variant: 'destructive', title: 'Error', description: 'Listing not found or you do not have permission to edit it.' });
+             router.push('/my-listings');
+          }
+        })
+        .catch(() => toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch listing details.' }))
+        .finally(() => setIsLoading(false));
+    }
+  }, [isEditMode, listingId, form, toast, router, user]);
+
 
   const youtubeLinkValue = useWatch({
     control: form.control,
@@ -139,7 +165,7 @@ export default function CreateListingPage() {
   }, [youtubeLinkValue, fetchDetails, form]);
 
 
-  const handleFilesChange = (files: File[]) => {
+  const handleFilesChange = (files: (File | string)[]) => {
     form.setValue('images', files, { shouldValidate: true });
   };
 
@@ -151,18 +177,19 @@ export default function CreateListingPage() {
     setIsLoading(true);
     
     try {
-      await createAircraftListing(values, user.uid);
-
-      toast({
-        title: 'Listing Created!',
-        description: "Your new aircraft listing has been successfully created.",
-      });
-      router.push('/');
+      if (isEditMode && listingId) {
+        await updateListing(listingId, values, user.uid);
+        toast({ title: 'Success!', description: "Your listing has been updated." });
+      } else {
+        await createAircraftListing(values, user.uid);
+        toast({ title: 'Listing Created!', description: "Your new aircraft listing has been successfully created." });
+      }
+      router.push('/my-listings');
     } catch (error) {
         console.error(error);
         toast({
             variant: 'destructive',
-            title: 'Submission Failed',
+            title: isEditMode ? 'Update Failed' : 'Submission Failed',
             description: error instanceof Error ? error.message : 'An unexpected error occurred.',
         });
     } finally {
@@ -177,7 +204,7 @@ export default function CreateListingPage() {
         <main className="flex-grow container mx-auto px-4 py-10">
           <div className="w-full max-w-5xl mx-auto">
             <div className="mb-10">
-              <h1 className="text-3xl font-bold">New Classified Listing</h1>
+              <h1 className="text-3xl font-bold">{isEditMode ? 'Edit Listing' : 'New Classified Listing'}</h1>
             </div>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-12">
@@ -200,7 +227,7 @@ export default function CreateListingPage() {
                   <FormField control={form.control} name="type" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Type</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger><SelectValue placeholder="Select a type" /></SelectTrigger>
                         </FormControl>
@@ -221,7 +248,7 @@ export default function CreateListingPage() {
                       <FormItem>
                          <FormLabel className="text-base font-semibold">Add Photos</FormLabel>
                         <FormControl>
-                          <ImageUploader onFilesChange={handleFilesChange} maxFiles={4} />
+                          <ImageUploader onFilesChange={handleFilesChange} maxFiles={4} existingImages={existingImages} />
                         </FormControl>
                         <FormMessage />
                         <p className="text-sm text-muted-foreground pt-2">Upgrade to 20 images & add YouTube video for $25</p>
@@ -262,7 +289,7 @@ export default function CreateListingPage() {
                   <FormField control={form.control} name="manufacturer" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Manufacturer</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger><SelectValue placeholder="Select manufacturer" /></SelectTrigger>
                         </FormControl>
@@ -276,7 +303,7 @@ export default function CreateListingPage() {
                   <FormField control={form.control} name="model" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Model</FormLabel>
-                       <Select onValueChange={field.onChange} defaultValue={field.value}>
+                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger><SelectValue placeholder="Select a model" /></SelectTrigger>
                         </FormControl>
@@ -455,7 +482,7 @@ export default function CreateListingPage() {
                 <div className="flex justify-end gap-4 pt-8 border-t">
                   <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>
                   <Button type="submit" disabled={isLoading} size="lg">
-                    {isLoading ? 'Saving...' : 'Save'}
+                    {isLoading ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</>) : isEditMode ? 'Update Listing' : 'Save'}
                   </Button>
                 </div>
               </form>

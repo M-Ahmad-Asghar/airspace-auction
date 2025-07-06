@@ -4,15 +4,8 @@ import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, Mic, Plus, MessageSquare, User } from 'lucide-react';
+import { Logo } from './Logo';
 
-const Logo = () => (
-    <div className="flex items-center justify-center bg-black text-white w-9 h-9 rounded-md flex-shrink-0">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M5.5 19.5V5.5L10 14L14.5 5.5V19.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M16.5 19.5V5.5H21.5V9.5H16.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-    </div>
-);
 
 export function PublicHeader() {
   return (
@@ -20,8 +13,7 @@ export function PublicHeader() {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-20 gap-4">
           <Link href="/" className="flex items-center gap-2">
-            <Logo />
-            <span className="text-xl md:text-2xl text-gray-800 hidden sm:inline">airplane<span className="font-bold">deals.com</span></span>
+            <Logo className="h-9 w-auto" />
           </Link>
           <div className="flex-1 max-w-xl mx-4 hidden md:block">
             <div className="relative">
@@ -48,7 +40,7 @@ export function PublicHeader() {
           </div>
         </div>
       </div>
-      <nav className="bg-[#365899]">
+      <nav className="bg-accent">
         <div className="container mx-auto px-4">
             <div className="flex items-center justify-center gap-4 sm:gap-6 h-12 text-white text-xs sm:text-sm font-medium overflow-x-auto">
                 <Link href="#" className="hover:underline flex-shrink-0">Aircraft</Link>

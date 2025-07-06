@@ -3,7 +3,7 @@ export const CATEGORIES = [
   { name: 'Aircraft', href: '/create-listing' },
   { name: 'Parts', href: '/create-listing/parts' },
   { name: 'Events', href: '/create-listing/events' },
-  { name: 'Real Estate', href: '/create-listing' },
+  { name: 'Real Estate', href: '/create-listing/real-estate' },
   { name: 'Places', href: '/create-listing' },
   { name: 'Services', href: '/create-listing' },
 ];

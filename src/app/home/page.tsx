@@ -22,6 +22,14 @@ function formatListingData(listing: DocumentData) {
           imageUrl: listing.imageUrls?.[0] || 'https://placehold.co/600x400.png',
           imageHint: 'event concert'
       };
+    } else if (listing.category === 'Real Estate') {
+      return {
+          id: listing.id,
+          title: listing.title || 'Real Estate Listing',
+          description: listing.description,
+          imageUrl: listing.imageUrls?.[0] || 'https://placehold.co/600x400.png',
+          imageHint: 'real estate house'
+      };
     }
     
     // Default formatter for Parts and other categories

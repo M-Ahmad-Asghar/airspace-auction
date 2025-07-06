@@ -53,30 +53,39 @@ export default function AuthPage() {
   });
 
   const onContinue = async () => {
-    if (!isFirebaseConfigured || !auth) return;
+    if (!isFirebaseConfigured || !auth) {
+      toast({
+          variant: "destructive",
+          title: "Firebase Not Configured",
+          description: "Please check your environment variables and restart the server.",
+      });
+      return;
+    }
     
-    // Trigger validation for the email field
-    const isValid = await form.trigger('email');
-    if (!isValid) return;
+    const isEmailValid = await form.trigger('email');
+    if (!isEmailValid) {
+      return;
+    }
 
     const emailValue = form.getValues('email');
     setIsLoading(true);
+
     try {
-        const methods = await fetchSignInMethodsForEmail(auth, emailValue);
-        setEmail(emailValue);
-        if (methods.length > 0) {
-            setStep('loginPassword');
-        } else {
-            setStep('registerPassword');
-        }
+      const methods = await fetchSignInMethodsForEmail(auth, emailValue);
+      setEmail(emailValue);
+      if (methods.length > 0) {
+        setStep('loginPassword');
+      } else {
+        setStep('registerPassword');
+      }
     } catch (error: any) {
-        toast({
-            variant: "destructive",
-            title: "Error",
-            description: error.message || "An unexpected error occurred checking your email.",
-        });
+      toast({
+          variant: "destructive",
+          title: "Error Checking Email",
+          description: error.message || "An unexpected error occurred. Please try again.",
+      });
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
   };
   
@@ -123,7 +132,6 @@ export default function AuthPage() {
     try {
         const result = await signInWithPopup(auth, provider);
         const { uid, email, displayName, photoURL } = result.user;
-        // Ensure profile is created/exists for Google sign-in users too
         await createUserProfile({ uid, email, displayName, photoURL });
         toast({ title: "Success", description: "You've successfully signed in with Google." });
         router.push("/home");
@@ -190,10 +198,19 @@ export default function AuthPage() {
                 </AlertDescription>
               </Alert>
             )}
-            <button onClick={step === 'email' ? goBack : editEmail} className="flex items-center text-sm font-medium text-gray-600 hover:text-black mb-4">
-                <ArrowLeft size={16} className="mr-2" />
-                {step !== 'email' && 'Back'}
-            </button>
+            <div className="flex items-center text-sm font-medium text-gray-600 hover:text-black mb-4">
+              {step === 'email' ? (
+                <button onClick={goBack} className="flex items-center">
+                  <ArrowLeft size={16} className="mr-2" />
+                  Back
+                </button>
+              ) : (
+                 <button onClick={editEmail} className="flex items-center">
+                  <ArrowLeft size={16} className="mr-2" />
+                  Back
+                </button>
+              )}
+            </div>
           
             <h1 className="text-3xl font-bold text-center mb-4">{getTitle()}</h1>
             {getSubtitle()}

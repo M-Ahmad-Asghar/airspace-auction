@@ -1,3 +1,4 @@
+
 'use server';
 
 export interface YoutubeVideoDetails {
@@ -7,19 +8,48 @@ export interface YoutubeVideoDetails {
 }
 
 export async function getYoutubeVideoDetails(videoId: string): Promise<YoutubeVideoDetails | null> {
-  // In a real application, you would use the YouTube Data API v3
-  // to fetch video details using an API key stored in environment variables.
-  console.log(`Simulating fetch for videoId: ${videoId}`);
-  
-  if (videoId) {
-    // Returning mock data for demonstration purposes.
+  const apiKey = process.env.YOUTUBE_API_KEY;
+
+  if (!apiKey || apiKey === 'your-youtube-api-key-here') {
+    console.warn('YOUTUBE_API_KEY is not set. Using mock data for YouTube details.');
     // Using a real video thumbnail for a more realistic preview.
-    return {
-      title: 'Majestic Boeing 747 Landing in Stormy Weather',
-      thumbnailUrl: `https://i.ytimg.com/vi/zK4Yp1Jd2kQ/hqdefault.jpg`,
-      author: 'Aviation Channel',
-    };
+    if (videoId) {
+      return {
+        title: 'Majestic Boeing 747 Landing in Stormy Weather',
+        thumbnailUrl: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+        author: 'Aviation Channel',
+      };
+    }
+    return null;
   }
   
-  return null;
+  const url = `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&key=${apiKey}&part=snippet`;
+
+  try {
+    const response = await fetch(url, { cache: 'force-cache' });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      console.error(`Failed to fetch YouTube video details. Status: ${response.status}. Body: ${errorBody}`);
+      return null;
+    }
+
+    const data = await response.json();
+    const item = data.items?.[0];
+
+    if (item) {
+      return {
+        title: item.snippet.title,
+        thumbnailUrl: item.snippet.thumbnails.high?.url || item.snippet.thumbnails.default.url,
+        author: item.snippet.channelTitle,
+      };
+    }
+    
+    console.warn(`No video found for ID: ${videoId}`);
+    return null;
+  } catch (error) {
+    console.error("Error fetching YouTube details from API", error);
+    return null;
+  }
 }
+

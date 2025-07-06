@@ -1,3 +1,4 @@
+
 'use server';
 
 import { db, storage, isFirebaseConfigured } from '@/lib/firebase';
@@ -30,10 +31,11 @@ export interface AircraftListingData {
   engineTimeMin?: number;
   engineTimeMax?: number;
   engineDetails: string;
+  propellerType: string;
   propellerTimeMin?: number;
   propellerTimeMax?: number;
-  propellerSerials: string;
   propellerDetails: string;
+  propellerSerials: string;
   avionics: string;
   additional?: string;
   exteriorDetails: string;

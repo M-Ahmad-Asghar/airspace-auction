@@ -342,22 +342,20 @@ export default function CreateListingPage() {
                     )} />
 
                     <FormField control={form.control} name="propellerType" render={({ field }) => (
-                      <FormItem>
+                      <FormItem className="md:col-span-2">
                         <FormLabel>Propeller Type</FormLabel>
                         <FormControl><Input placeholder="Enter propeller type" {...field} /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )} />
-                     <div/>
 
-                    <FormItem>
+                    <FormItem className="md:col-span-2">
                       <FormLabel>Propeller Time</FormLabel>
                       <div className="grid grid-cols-2 gap-4">
                         <FormField control={form.control} name="propellerTimeMin" render={({ field }) => (<FormItem><FormControl><Input type="number" placeholder="Minimum" {...field} /></FormControl><FormMessage/></FormItem>)} />
                         <FormField control={form.control} name="propellerTimeMax" render={({ field }) => (<FormItem><FormControl><Input type="number" placeholder="Maximum" {...field} /></FormControl><FormMessage/></FormItem>)} />
                       </div>
                     </FormItem>
-                     <div/>
 
                     <div className="md:col-span-2">
                         <FormField control={form.control} name="propellerDetails" render={({ field }) => (

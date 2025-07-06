@@ -8,25 +8,12 @@ export interface YoutubeVideoDetails {
 }
 
 export async function getYoutubeVideoDetails(videoId: string): Promise<YoutubeVideoDetails | null> {
-  const apiKey = process.env.YOUTUBE_API_KEY;
-
-  if (!apiKey || apiKey === 'your-youtube-api-key-here') {
-    console.warn('YOUTUBE_API_KEY is not set. Using mock data for YouTube details.');
-    // Using a real video thumbnail for a more realistic preview.
-    if (videoId) {
-      return {
-        title: 'Majestic Boeing 747 Landing in Stormy Weather',
-        thumbnailUrl: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
-        author: 'Aviation Channel',
-      };
-    }
-    return null;
-  }
-  
-  const url = `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&key=${apiKey}&part=snippet`;
+  const url = `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`;
 
   try {
-    const response = await fetch(url, { cache: 'force-cache' });
+    // We use no-cache to ensure we always get the latest details,
+    // as a user might update their video title/thumbnail.
+    const response = await fetch(url, { cache: 'no-cache' });
 
     if (!response.ok) {
       const errorBody = await response.text();
@@ -35,21 +22,19 @@ export async function getYoutubeVideoDetails(videoId: string): Promise<YoutubeVi
     }
 
     const data = await response.json();
-    const item = data.items?.[0];
 
-    if (item) {
+    if (data && data.title && data.author_name && data.thumbnail_url) {
       return {
-        title: item.snippet.title,
-        thumbnailUrl: item.snippet.thumbnails.high?.url || item.snippet.thumbnails.default.url,
-        author: item.snippet.channelTitle,
+        title: data.title,
+        author: data.author_name,
+        thumbnailUrl: data.thumbnail_url,
       };
     }
     
-    console.warn(`No video found for ID: ${videoId}`);
+    console.warn(`No video found or incomplete data for ID: ${videoId}`);
     return null;
   } catch (error) {
-    console.error("Error fetching YouTube details from API", error);
+    console.error("Error fetching YouTube details from oEmbed API", error);
     return null;
   }
 }
-

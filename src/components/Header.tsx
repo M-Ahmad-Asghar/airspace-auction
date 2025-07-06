@@ -11,6 +11,8 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -113,8 +115,32 @@ export function Header() {
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={handleLogout}>
+                 <DropdownMenuContent align="end" className="w-64 p-2">
+                  <DropdownMenuLabel className="font-normal p-0">
+                    <div className="flex items-center gap-3 p-1">
+                      <Avatar className="h-12 w-12">
+                        <AvatarImage src={user.photoURL || undefined} alt={user.displayName || 'User avatar'} />
+                        <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
+                      </Avatar>
+                      <div className="space-y-1">
+                        <p className="text-sm font-semibold leading-none">{user.displayName || 'Username'}</p>
+                        <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+                      </div>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator className="my-2" />
+                  <DropdownMenuItem className="py-2 cursor-pointer">Dashboard</DropdownMenuItem>
+                  <DropdownMenuItem className="py-2 cursor-pointer" asChild>
+                    <Link href="/my-listings">My Listings</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="py-2 cursor-pointer">Saved Searches</DropdownMenuItem>
+                  <DropdownMenuItem className="py-2 cursor-pointer">Messages</DropdownMenuItem>
+                  <DropdownMenuItem className="py-2 cursor-pointer">Billing & Payments</DropdownMenuItem>
+                  <DropdownMenuItem className="py-2 cursor-pointer">Account Settings</DropdownMenuItem>
+                  <DropdownMenuItem className="py-2 cursor-pointer">Notifications</DropdownMenuItem>
+                  <DropdownMenuItem className="py-2 cursor-pointer">Support & Help</DropdownMenuItem>
+                  <DropdownMenuSeparator className="my-2" />
+                  <DropdownMenuItem className="py-2 cursor-pointer" onClick={handleLogout}>
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Logout</span>
                   </DropdownMenuItem>
@@ -128,11 +154,11 @@ export function Header() {
       <nav className="bg-accent">
         <div className="container mx-auto px-4">
             <div className="flex items-center justify-center gap-4 sm:gap-6 h-12 text-white text-xs sm:text-sm font-medium overflow-x-auto">
-                <Link href="/" className="hover:underline flex-shrink-0">
+                <Link href="/home" className="hover:underline flex-shrink-0">
                   All
                 </Link>
                 {CATEGORIES.map((category) => (
-                  <Link key={category.name} href={`/?category=${category.name}`} className="hover:underline flex-shrink-0">
+                  <Link key={category.name} href={`/home?category=${category.name}`} className="hover:underline flex-shrink-0">
                     {category.name}
                   </Link>
                 ))}

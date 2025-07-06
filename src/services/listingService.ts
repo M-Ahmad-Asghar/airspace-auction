@@ -371,3 +371,36 @@ export async function getRecentListings({ category, count = 10 }: { category?: s
         }
     }
 }
+
+
+/**
+ * Fetches listings created by a specific user.
+ * @param userId The UID of the user.
+ * @returns An array of the user's listing objects.
+ */
+export async function getListingsByUserId(userId: string): Promise<DocumentData[]> {
+    if (!isFirebaseConfigured || !db) {
+        console.warn('Firebase is not configured, returning empty array.');
+        return [];
+    }
+    
+    if (!userId) {
+        console.warn('No user ID provided, returning empty array.');
+        return [];
+    }
+
+    try {
+        const listingsCollectionRef = collection(db, 'listings');
+        const q = query(listingsCollectionRef, where('userId', '==', userId), orderBy('createdAt', 'desc'));
+        
+        const querySnapshot = await getDocs(q);
+
+        return querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+        }));
+    } catch (error) {
+        console.error("Error fetching user listings:", error);
+        return [];
+    }
+}

@@ -76,7 +76,14 @@ export default function MyListingsPage() {
             setLoading(true);
             getListingsByUserId(user.uid)
                 .then(data => {
-                    const formattedData = data.map(formatListingData);
+                    // Sort data by creation time, newest first.
+                    // The 'createdAt' field is a Firestore Timestamp object.
+                    const sortedData = [...data].sort((a, b) => {
+                        const timeA = a.createdAt?.seconds || 0;
+                        const timeB = b.createdAt?.seconds || 0;
+                        return timeB - timeA;
+                    });
+                    const formattedData = sortedData.map(formatListingData);
                     setListings(formattedData);
                     setLoading(false);
                 })
@@ -93,7 +100,7 @@ export default function MyListingsPage() {
         <ProtectedRoute>
             <div className="flex flex-col min-h-screen">
                 <Header />
-                <main className="flex-grow container py-8">
+                <main className="flex-grow container py-8 flex flex-col">
                     <h1 className="text-3xl font-bold mb-6">My Listings</h1>
                     {isLoading ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
@@ -113,13 +120,15 @@ export default function MyListingsPage() {
                             ))}
                         </div>
                     ) : (
-                        <div className="text-center py-16 border-2 border-dashed rounded-lg">
-                            <h2 className="text-2xl font-semibold">You haven't posted any listings yet.</h2>
-                            <p className="text-muted-foreground mt-2 mb-6">Why not create one now?</p>
-                            <Button asChild>
-                                <Link href="/create-listing">Create New Listing</Link>
-                            </Button>
-                        </div>
+                       <div className="flex-grow flex items-center justify-center">
+                            <div className="text-center py-16 border-2 border-dashed rounded-lg w-full max-w-lg">
+                                <h2 className="text-2xl font-semibold">You haven't posted any listings yet.</h2>
+                                <p className="text-muted-foreground mt-2 mb-6">Why not create one now?</p>
+                                <Button asChild>
+                                    <Link href="/create-listing">Create New Listing</Link>
+                                </Button>
+                            </div>
+                       </div>
                     )}
                 </main>
             </div>

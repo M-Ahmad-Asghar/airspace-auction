@@ -391,7 +391,9 @@ export async function getListingsByUserId(userId: string): Promise<DocumentData[
 
     try {
         const listingsCollectionRef = collection(db, 'listings');
-        const q = query(listingsCollectionRef, where('userId', '==', userId), orderBy('createdAt', 'desc'));
+        // This query can fail if the composite index (userId, createdAt) doesn't exist.
+        // We remove the orderBy to make the query more resilient, and sort on the client.
+        const q = query(listingsCollectionRef, where('userId', '==', userId));
         
         const querySnapshot = await getDocs(q);
 

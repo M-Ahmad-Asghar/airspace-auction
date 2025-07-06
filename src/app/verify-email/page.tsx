@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -22,9 +23,9 @@ export default function VerifyEmailPage() {
   useEffect(() => {
     if (!loading) {
       if (!user) {
-        router.push('/');
+        router.push('/login');
       } else if (user.emailVerified) {
-        router.push('/home');
+        router.push('/');
       }
     }
   }, [user, loading, router]);
@@ -48,7 +49,7 @@ export default function VerifyEmailPage() {
 
   const handleLogout = async () => {
     await signOut(auth);
-    router.push('/');
+    router.push('/login');
   };
 
   const handleRefresh = () => {
@@ -56,7 +57,7 @@ export default function VerifyEmailPage() {
       auth.currentUser.reload().then(() => {
         if (auth.currentUser?.emailVerified) {
           toast({ title: 'Success!', description: 'Your email has been verified. Welcome!' });
-          router.push('/home');
+          router.push('/');
         } else {
           toast({ variant: 'destructive', title: 'Not Verified', description: 'Your email is still not verified. Please check your inbox.' });
         }

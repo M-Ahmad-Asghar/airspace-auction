@@ -29,15 +29,19 @@ export function PublicHeader() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button>
-              <Plus size={16} className="mr-1 md:mr-2"/>
-              Post
+            <Button asChild>
+              <Link href="/login">
+                <Plus size={16} className="mr-1 md:mr-2"/>
+                Post
+              </Link>
             </Button>
             <Button variant="ghost" size="icon" className="hidden sm:inline-flex">
                 <MessageSquare />
             </Button>
-            <Button variant="ghost" size="icon">
+            <Button variant="ghost" size="icon" asChild>
+              <Link href="/login">
                 <User />
+              </Link>
             </Button>
           </div>
         </div>
@@ -45,9 +49,9 @@ export function PublicHeader() {
       <nav className="bg-accent">
         <div className="container mx-auto px-4">
             <div className="flex items-center justify-center gap-4 sm:gap-6 h-12 text-white text-xs sm:text-sm font-medium overflow-x-auto">
-                <Link href="/home" className="hover:underline flex-shrink-0">All</Link>
+                <Link href="/" className="hover:underline flex-shrink-0">All</Link>
                 {CATEGORIES.map((category) => (
-                  <Link key={category.name} href={`/home?category=${category.name}`} className="hover:underline flex-shrink-0">
+                  <Link key={category.name} href={`/?category=${category.name}`} className="hover:underline flex-shrink-0">
                     {category.name}
                   </Link>
                 ))}

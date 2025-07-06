@@ -71,7 +71,7 @@ export default function CreatePartListingPage() {
         title: 'Listing Created!',
         description: "Your new part listing has been successfully created.",
       });
-      router.push('/home');
+      router.push('/');
     } catch (error) {
       console.error(error);
       toast({

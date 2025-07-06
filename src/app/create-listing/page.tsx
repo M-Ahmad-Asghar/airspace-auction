@@ -157,7 +157,7 @@ export default function CreateListingPage() {
         title: 'Listing Created!',
         description: "Your new aircraft listing has been successfully created.",
       });
-      router.push('/home');
+      router.push('/');
     } catch (error) {
         console.error(error);
         toast({

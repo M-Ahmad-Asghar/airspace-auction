@@ -65,7 +65,7 @@ export default function CreatePlaceListingPage() {
         title: 'Listing Created!',
         description: "Your new place listing has been successfully created.",
       });
-      router.push('/home');
+      router.push('/');
     } catch (error) {
       console.error(error);
       toast({

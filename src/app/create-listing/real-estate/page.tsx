@@ -73,7 +73,7 @@ export default function CreateRealEstateListingPage() {
         title: 'Listing Created!',
         description: "Your new real estate listing has been successfully created.",
       });
-      router.push('/home');
+      router.push('/');
     } catch (error) {
       console.error(error);
       toast({

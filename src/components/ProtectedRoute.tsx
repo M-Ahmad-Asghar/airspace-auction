@@ -1,3 +1,4 @@
+
 "use client";
 
 import { type ReactNode, useEffect } from 'react';
@@ -20,7 +21,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
     // Redirect to login if not authenticated
     if (!isFirebaseConfigured || !user) {
-      router.push('/');
+      router.push('/login');
       return;
     }
     

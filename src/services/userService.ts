@@ -2,20 +2,26 @@
 
 import { db, isFirebaseConfigured } from '@/lib/firebase';
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
-import type { User } from 'firebase/auth';
+
+export interface UserProfileData {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  photoURL: string | null;
+}
 
 /**
  * Creates a user profile document in Firestore if it doesn't already exist.
  * This function is idempotent.
  * @param user The Firebase Auth user object.
  */
-export async function createUserProfile(user: User): Promise<void> {
+export async function createUserProfile(userData: UserProfileData): Promise<void> {
   if (!isFirebaseConfigured || !db) {
     console.error('Firebase is not configured. Skipping user profile creation.');
     return;
   }
 
-  const userRef = doc(db, 'users', user.uid);
+  const userRef = doc(db, 'users', userData.uid);
 
   try {
     const userDoc = await getDoc(userRef);
@@ -25,16 +31,13 @@ export async function createUserProfile(user: User): Promise<void> {
     }
     
     // User profile does not exist, create it.
-    const userData = {
-      uid: user.uid,
-      email: user.email,
+    const profileToSave = {
+      ...userData,
       createdAt: serverTimestamp(),
-      displayName: user.displayName || null,
-      photoURL: user.photoURL || null,
     };
 
-    await setDoc(userRef, userData);
-    console.log('User profile created for UID:', user.uid);
+    await setDoc(userRef, profileToSave);
+    console.log('User profile created for UID:', userData.uid);
   } catch (error) {
     console.error('Error creating or checking user profile:', error);
     // To avoid failing the entire sign-up process, we can just log the error.

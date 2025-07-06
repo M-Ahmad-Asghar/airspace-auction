@@ -18,7 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { auth } from '@/lib/firebase';
+import { auth, isFirebaseConfigured } from '@/lib/firebase';
 import { ArrowLeft, Lock, XCircle, Pencil, Eye, EyeOff, Terminal } from 'lucide-react';
 import { PublicHeader } from '@/components/PublicHeader';
 import { useAuth } from '@/hooks/useAuth';
@@ -99,7 +99,8 @@ export default function AuthPage() {
     setIsLoading(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, values.password);
-      await createUserProfile(userCredential.user);
+      const { uid, email: userEmail, displayName, photoURL } = userCredential.user;
+      await createUserProfile({ uid, email: userEmail, displayName, photoURL });
       toast({ title: 'Account Created', description: "You've successfully created your account." });
       router.push('/home');
     } catch (error: any) {
@@ -123,7 +124,8 @@ export default function AuthPage() {
     const provider = new GoogleAuthProvider();
     try {
         const result = await signInWithPopup(auth, provider);
-        await createUserProfile(result.user);
+        const { uid, email, displayName, photoURL } = result.user;
+        await createUserProfile({ uid, email, displayName, photoURL });
         toast({ title: "Success", description: "You've successfully signed in with Google." });
         router.push("/home");
     } catch (error: any) {

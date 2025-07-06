@@ -58,8 +58,8 @@ export function MyListingCard({ listing }: MyListingCardProps) {
           {listing.description}
         </CardDescription>
       </CardContent>
-      <CardFooter className="p-4 pt-0 border-t mt-auto bg-muted/50">
-        <div className="flex w-full justify-end gap-2">
+      <CardFooter className="p-4 border-t mt-auto bg-muted/50">
+        <div className="flex w-full justify-center gap-2">
             <Button variant="outline" size="sm" onClick={handleEdit}>
                 <FilePenLine className="mr-2 h-4 w-4" />
                 Edit

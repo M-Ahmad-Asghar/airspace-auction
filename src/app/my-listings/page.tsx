@@ -12,53 +12,50 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
+import { formatDistanceToNow } from 'date-fns';
 
 function formatListingData(listing: DocumentData) {
-    const commonData = {
-        id: listing.id,
-        description: listing.description,
-        imageUrl: listing.imageUrls?.[0] || 'https://placehold.co/600x400.png',
-        category: listing.category,
-    };
-    
-    if (listing.category === 'Aircraft') {
-      return {
-          ...commonData,
-          title: `${listing.year} ${listing.manufacturer} ${listing.model}`,
-          imageHint: `${listing.manufacturer} ${listing.model}`
-      };
-    } else if (listing.category === 'Events') {
-      return {
-          ...commonData,
-          title: listing.title || 'Event Listing',
-          imageHint: 'event concert'
-      };
-    } else if (listing.category === 'Real Estate') {
-      return {
-          ...commonData,
-          title: listing.title || 'Real Estate Listing',
-          imageHint: 'real estate house'
-      };
-    } else if (listing.category === 'Places') {
-      return {
-          ...commonData,
-          title: listing.title || 'Place Listing',
-          imageHint: 'travel destination'
-      };
-    } else if (listing.category === 'Services') {
-      return {
-          ...commonData,
-          title: listing.title || 'Service Listing',
-          imageHint: 'professional service'
-      };
-    }
-    
-    // Default formatter for Parts and other categories
-    return {
-        ...commonData,
-        title: listing.title || `${listing.manufacturer} Part`,
-        imageHint: `${listing.manufacturer} part`
-    };
+  const formattedData = {
+    id: listing.id,
+    category: listing.category,
+    price: listing.price || 0,
+    imageUrl: listing.imageUrls?.[0] || `https://placehold.co/600x450.png`,
+    location: listing.location || 'Unknown Location',
+    postedDate: listing.createdAt ? formatDistanceToNow(listing.createdAt.toDate()).replace('about ', '') + ' ago' : 'N/A',
+    // Placeholders for data not available in the listing document
+    rating: 5.0, // Placeholder
+    ratingCount: 145, // Placeholder
+  };
+
+  let title = '';
+  let imageHint = '';
+
+  if (listing.category === 'Aircraft') {
+      title = `${listing.year} ${listing.manufacturer} ${listing.model}`;
+      imageHint = `${listing.manufacturer} ${listing.model}`;
+  } else if (listing.category === 'Events') {
+      title = listing.title || 'Event Listing';
+      imageHint = 'event concert';
+  } else if (listing.category === 'Real Estate') {
+      title = listing.title || 'Real Estate Listing';
+      imageHint = 'real estate house';
+  } else if (listing.category === 'Places') {
+      title = listing.title || 'Place Listing';
+      imageHint = 'travel destination';
+  } else if (listing.category === 'Services') {
+      title = listing.title || 'Service Listing';
+      imageHint = 'professional service';
+  } else {
+    // Default for Parts and other categories
+    title = listing.title || `${listing.manufacturer} Part`;
+    imageHint = `${listing.manufacturer} part`;
+  }
+
+  return {
+    ...formattedData,
+    title,
+    imageHint,
+  };
 }
 
 
@@ -109,10 +106,10 @@ export default function MyListingsPage() {
                 <main className="flex-grow container mx-auto px-4 py-8 flex flex-col">
                     <h1 className="text-3xl font-bold mb-6">My Listings</h1>
                     {isLoading ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
-                            {Array.from({ length: 3 }).map((_, i) => (
-                                <div key={i} className="rounded-lg border bg-card text-card-foreground shadow-sm p-4 space-y-4">
-                                    <Skeleton className="h-40 w-full" />
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                            {Array.from({ length: 4 }).map((_, i) => (
+                                <div key={i} className="rounded-2xl border bg-card text-card-foreground shadow-sm p-4 space-y-4">
+                                    <Skeleton className="aspect-[4/3] w-full" />
                                     <Skeleton className="h-6 w-3/4" />
                                     <Skeleton className="h-4 w-full" />
                                     <Skeleton className="h-4 w-1/2" />
@@ -120,7 +117,7 @@ export default function MyListingsPage() {
                             ))}
                         </div>
                     ) : listings.length > 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                             {listings.map(listing => (
                                 <MyListingCard 
                                     key={listing.id} 

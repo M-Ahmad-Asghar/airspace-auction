@@ -6,58 +6,51 @@ import { getRecentListings } from '@/services/listingService';
 import type { DocumentData } from 'firebase/firestore';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { formatDistanceToNow } from 'date-fns';
 
 function formatListingData(listing: DocumentData) {
-    if (listing.category === 'Aircraft') {
-      return {
-          id: listing.id,
-          title: `${listing.year} ${listing.manufacturer} ${listing.model}`,
-          description: listing.description,
-          imageUrl: listing.imageUrls?.[0] || 'https://placehold.co/600x400.png',
-          imageHint: `${listing.manufacturer} ${listing.model}`
-      };
-    } else if (listing.category === 'Events') {
-      return {
-          id: listing.id,
-          title: listing.title || 'Event Listing',
-          description: listing.description,
-          imageUrl: listing.imageUrls?.[0] || 'https://placehold.co/600x400.png',
-          imageHint: 'event concert'
-      };
-    } else if (listing.category === 'Real Estate') {
-      return {
-          id: listing.id,
-          title: listing.title || 'Real Estate Listing',
-          description: listing.description,
-          imageUrl: listing.imageUrls?.[0] || 'https://placehold.co/600x400.png',
-          imageHint: 'real estate house'
-      };
-    } else if (listing.category === 'Places') {
-      return {
-          id: listing.id,
-          title: listing.title || 'Place Listing',
-          description: listing.description,
-          imageUrl: listing.imageUrls?.[0] || 'https://placehold.co/600x400.png',
-          imageHint: 'travel destination'
-      };
-    } else if (listing.category === 'Services') {
-      return {
-          id: listing.id,
-          title: listing.title || 'Service Listing',
-          description: listing.description,
-          imageUrl: listing.imageUrls?.[0] || 'https://placehold.co/600x400.png',
-          imageHint: 'professional service'
-      };
-    }
-    
-    // Default formatter for Parts and other categories
-    return {
-        id: listing.id,
-        title: listing.title || `${listing.manufacturer} Part`,
-        description: listing.description,
-        imageUrl: listing.imageUrls?.[0] || 'https://placehold.co/600x400.png',
-        imageHint: `${listing.manufacturer} part`
-    };
+  const formattedData = {
+    id: listing.id,
+    price: listing.price || 0,
+    imageUrl: listing.imageUrls?.[0] || `https://placehold.co/600x450.png`,
+    location: listing.location || 'Unknown Location',
+    postedDate: listing.createdAt ? formatDistanceToNow(listing.createdAt.toDate()).replace('about ', '') + ' ago' : 'N/A',
+    // Placeholders for data not available in the listing document
+    userName: 'Joseph Andrew', // Placeholder
+    userAvatarUrl: 'https://placehold.co/40x40.png', // Placeholder
+    rating: 5.0, // Placeholder
+    ratingCount: 145, // Placeholder
+  };
+
+  let title = '';
+  let imageHint = '';
+
+  if (listing.category === 'Aircraft') {
+    title = `${listing.year} ${listing.manufacturer} ${listing.model}`;
+    imageHint = `${listing.manufacturer} ${listing.model}`;
+  } else if (listing.category === 'Events') {
+    title = listing.title || 'Event Listing';
+    imageHint = 'event concert';
+  } else if (listing.category === 'Real Estate') {
+    title = listing.title || 'Real Estate Listing';
+    imageHint = 'real estate house';
+  } else if (listing.category === 'Places') {
+    title = listing.title || 'Place Listing';
+    imageHint = 'travel destination';
+  } else if (listing.category === 'Services') {
+    title = listing.title || 'Service Listing';
+    imageHint = 'professional service';
+  } else {
+    // Default for Parts and others
+    title = listing.title || `${listing.manufacturer} Part`;
+    imageHint = `${listing.manufacturer} part`;
+  }
+  
+  return {
+    ...formattedData,
+    title,
+    imageHint,
+  };
 }
 
 
@@ -80,7 +73,7 @@ export default async function HomePage({ searchParams }: { searchParams?: { cate
               )}
             </div>
             {formattedListings.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {formattedListings.map((listing) => (
                         <ListingCard key={listing.id} listing={listing} />
                     ))}

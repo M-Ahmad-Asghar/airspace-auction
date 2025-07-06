@@ -3,9 +3,9 @@
 
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FilePenLine, Trash2, Loader2 } from 'lucide-react';
+import { FilePenLine, Trash2, Loader2, Star, MapPin } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,14 +19,17 @@ import {
 } from "@/components/ui/alert-dialog";
 import { CATEGORIES } from '@/lib/constants';
 
-
 interface MyListingCardProps {
   listing: {
     id: string;
     title: string;
-    description: string;
+    price: number;
     imageUrl: string;
     imageHint: string;
+    location: string;
+    postedDate: string;
+    rating: number;
+    ratingCount: number;
     category: string;
   };
   onDelete: (listingId: string) => Promise<void>;
@@ -50,9 +53,9 @@ export function MyListingCard({ listing, onDelete, isDeleting }: MyListingCardPr
   };
 
   return (
-    <Card className="overflow-hidden transition-shadow duration-300 hover:shadow-xl flex flex-col">
-      <CardHeader className="p-0">
-        <div className="aspect-video relative">
+    <Card className="overflow-hidden transition-shadow duration-300 hover:shadow-xl rounded-2xl flex flex-col border">
+      <div className="relative">
+        <div className="aspect-[4/3] relative">
           <Image
             src={listing.imageUrl}
             alt={listing.title}
@@ -62,14 +65,23 @@ export function MyListingCard({ listing, onDelete, isDeleting }: MyListingCardPr
             data-ai-hint={listing.imageHint}
           />
         </div>
-      </CardHeader>
-      <CardContent className="p-4 flex-grow">
-        <CardTitle className="text-lg font-semibold mb-1 truncate">{listing.title}</CardTitle>
-        <CardDescription className="text-sm text-muted-foreground line-clamp-2">
-          {listing.description}
-        </CardDescription>
-      </CardContent>
-      <CardFooter className="p-4 border-t mt-auto bg-muted/50">
+      </div>
+      <div className="p-4 space-y-3 flex-grow bg-card">
+        <h3 className="font-bold text-xl truncate">{listing.title}</h3>
+        <div className="flex justify-between items-center">
+          <p className="text-2xl font-bold text-primary">${Number(listing.price).toFixed(2)}</p>
+          <div className="flex items-center gap-1.5">
+            <Star className="text-primary fill-primary h-5 w-5" />
+            <span className="font-bold">{listing.rating.toFixed(1)}</span>
+            <span className="text-muted-foreground">({listing.ratingCount})</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+          <MapPin className="h-4 w-4" />
+          <span>{listing.location}</span>
+        </div>
+      </div>
+      <CardFooter className="p-4 border-t mt-auto bg-card">
         <div className="flex w-full justify-center gap-2">
             <Button variant="outline" size="sm" onClick={handleEdit}>
                 <FilePenLine className="mr-2 h-4 w-4" />

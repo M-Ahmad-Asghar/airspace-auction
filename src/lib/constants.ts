@@ -4,7 +4,7 @@ export const CATEGORIES = [
   { name: 'Parts', href: '/create-listing/parts' },
   { name: 'Events', href: '/create-listing/events' },
   { name: 'Real Estate', href: '/create-listing/real-estate' },
-  { name: 'Places', href: '/create-listing' },
+  { name: 'Places', href: '/create-listing/places' },
   { name: 'Services', href: '/create-listing' },
 ];
 

@@ -30,6 +30,14 @@ function formatListingData(listing: DocumentData) {
           imageUrl: listing.imageUrls?.[0] || 'https://placehold.co/600x400.png',
           imageHint: 'real estate house'
       };
+    } else if (listing.category === 'Places') {
+      return {
+          id: listing.id,
+          title: listing.title || 'Place Listing',
+          description: listing.description,
+          imageUrl: listing.imageUrls?.[0] || 'https://placehold.co/600x400.png',
+          imageHint: 'travel destination'
+      };
     }
     
     // Default formatter for Parts and other categories

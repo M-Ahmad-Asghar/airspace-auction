@@ -8,12 +8,17 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { LogOut, PlusCircle } from 'lucide-react';
 import { Logo } from './Logo';
+import { useAuth } from '@/hooks/useAuth';
 
 export function Header() {
   const router = useRouter();
   const { toast } = useToast();
+  const { isFirebaseConfigured } = useAuth();
 
   const handleLogout = async () => {
+    if (!isFirebaseConfigured || !auth) {
+      return;
+    }
     try {
       await signOut(auth);
       toast({
@@ -38,13 +43,13 @@ export function Header() {
         </Link>
         <div className="flex flex-1 items-center justify-end space-x-4">
           <nav className="flex items-center space-x-2">
-            <Button asChild>
+            <Button asChild disabled={!isFirebaseConfigured}>
               <Link href="/create-listing">
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Create Listing
               </Link>
             </Button>
-            <Button variant="outline" onClick={handleLogout}>
+            <Button variant="outline" onClick={handleLogout} disabled={!isFirebaseConfigured}>
               <LogOut className="mr-2 h-4 w-4" />
               Logout
             </Button>

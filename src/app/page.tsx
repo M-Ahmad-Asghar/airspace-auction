@@ -19,8 +19,10 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { auth } from '@/lib/firebase';
-import { ArrowLeft, Lock, XCircle, Pencil, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, Lock, XCircle, Pencil, Eye, EyeOff, Terminal } from 'lucide-react';
 import { PublicHeader } from '@/components/PublicHeader';
+import { useAuth } from '@/hooks/useAuth';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email.' }),
@@ -40,6 +42,7 @@ const GoogleIcon = () => (
 export default function AuthPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { isFirebaseConfigured } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [step, setStep] = useState<'email' | 'loginPassword' | 'registerPassword'>('email');
   const [email, setEmail] = useState('');
@@ -51,6 +54,7 @@ export default function AuthPage() {
   });
 
   const onContinue = async () => {
+    if (!isFirebaseConfigured || !auth) return;
     const isValid = await form.trigger('email');
     if (!isValid) return;
 
@@ -76,7 +80,7 @@ export default function AuthPage() {
   };
   
   const onLogin = async (values: z.infer<typeof formSchema>) => {
-    if (!values.password) return;
+    if (!isFirebaseConfigured || !auth || !values.password) return;
     setIsLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, values.password);
@@ -90,7 +94,7 @@ export default function AuthPage() {
   }
 
   const onRegister = async (values: z.infer<typeof formSchema>) => {
-    if (!values.password) return;
+    if (!isFirebaseConfigured || !auth || !values.password) return;
     setIsLoading(true);
     try {
       await createUserWithEmailAndPassword(auth, email, values.password);
@@ -112,6 +116,7 @@ export default function AuthPage() {
   };
 
   const handleGoogleSignIn = async () => {
+    if (!isFirebaseConfigured || !auth) return;
     setIsLoading(true);
     const provider = new GoogleAuthProvider();
     try {
@@ -171,6 +176,19 @@ export default function AuthPage() {
       <PublicHeader />
       <main className="container mx-auto px-4 py-12 flex justify-center">
         <div className="w-full max-w-sm">
+            {!isFirebaseConfigured && (
+              <Alert variant="destructive" className="mb-6">
+                <Terminal className="h-4 w-4" />
+                <AlertTitle>Firebase Not Configured</AlertTitle>
+                <AlertDescription>
+                  Please add your credentials to{' '}
+                  <code className="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold">
+                    .env.local
+                  </code>{' '}
+                  and restart the server.
+                </AlertDescription>
+              </Alert>
+            )}
             <button onClick={step === 'email' ? goBack : editEmail} className="flex items-center text-sm font-medium text-gray-600 hover:text-black mb-4">
                 <ArrowLeft size={16} />
             </button>
@@ -253,7 +271,7 @@ export default function AuthPage() {
                         onClick={step === 'email' ? onContinue : undefined}
                         className="w-full !mt-6" 
                         size="lg" 
-                        disabled={isLoading}
+                        disabled={isLoading || !isFirebaseConfigured}
                     >
                         {isLoading ? 'Loading...' : getButtonText()}
                     </Button>
@@ -266,7 +284,7 @@ export default function AuthPage() {
                 <div className="flex-grow border-t border-gray-300"></div>
             </div>
 
-            <Button variant="outline" className="w-full" size="lg" onClick={handleGoogleSignIn} disabled={isLoading}>
+            <Button variant="outline" className="w-full" size="lg" onClick={handleGoogleSignIn} disabled={isLoading || !isFirebaseConfigured}>
                 <GoogleIcon />
                 {step === 'registerPassword' ? 'Register with Google' : 'Continue with Google'}
             </Button>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, type ReactNode } from 'react';
 import { onAuthStateChanged, type User } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { auth, isFirebaseConfigured } from '@/lib/firebase';
 import { AuthContext } from '@/context/AuthContext';
 import { Skeleton } from './ui/skeleton';
 
@@ -15,6 +15,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!isFirebaseConfigured || !auth) {
+      setLoading(false);
+      return;
+    }
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       setLoading(false);
@@ -38,7 +42,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading }}>
+    <AuthContext.Provider value={{ user, loading, isFirebaseConfigured }}>
       {children}
     </AuthContext.Provider>
   );

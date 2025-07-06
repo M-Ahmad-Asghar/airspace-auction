@@ -10,16 +10,16 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { user, loading } = useAuth();
+  const { user, loading, isFirebaseConfigured } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (!loading && (!user || !isFirebaseConfigured)) {
       router.push('/');
     }
-  }, [user, loading, router]);
+  }, [user, loading, router, isFirebaseConfigured]);
 
-  if (loading || !user) {
+  if (loading || !user || !isFirebaseConfigured) {
      return (
       <div className="flex h-screen w-full items-center justify-center">
         <div className="flex flex-col items-center space-y-4">

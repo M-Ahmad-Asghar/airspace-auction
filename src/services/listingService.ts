@@ -334,6 +334,8 @@ export async function getRecentListings({ category, count = 10 }: { category?: s
         let q: Query<DocumentData>;
 
         if (category) {
+            // This query requires a composite index on 'category' and 'createdAt'.
+            // The Firebase console provides a link to create it if it's missing.
             q = query(listingsCollectionRef, where('category', '==', category), orderBy('createdAt', 'desc'), limit(count));
         } else {
             q = query(listingsCollectionRef, orderBy('createdAt', 'desc'), limit(count));
@@ -346,7 +348,26 @@ export async function getRecentListings({ category, count = 10 }: { category?: s
             ...doc.data(),
         }));
     } catch (error) {
-        console.error("Error fetching listings:", error);
-        throw new Error("Failed to fetch listings from Firestore.");
+        // If the composite index is missing, Firestore will throw an error.
+        // We log it and fall back to fetching all recent listings and filtering in code.
+        console.error("Error fetching listings, likely due to a missing Firestore index:", error);
+        
+        // Fallback query: fetch recent items and filter manually
+        try {
+            console.log('Falling back to a less efficient query. Please create the recommended Firestore index.');
+            const fallbackQuery = query(collection(db, 'listings'), orderBy('createdAt', 'desc'), limit(50)); // Fetch more to filter from
+            const querySnapshot = await getDocs(fallbackQuery);
+            let listings = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+            if (category) {
+                listings = listings.filter(listing => listing.category === category);
+            }
+            
+            return listings.slice(0, count);
+
+        } catch (fallbackError) {
+             console.error("Error with fallback query:", fallbackError);
+             return []; // Return empty if even the fallback fails
+        }
     }
 }

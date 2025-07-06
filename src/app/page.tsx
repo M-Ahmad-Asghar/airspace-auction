@@ -18,12 +18,12 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { auth, isFirebaseConfigured } from '@/lib/firebase';
+import { auth } from '@/lib/firebase';
 import { ArrowLeft, Lock, XCircle, Pencil, Eye, EyeOff, Terminal } from 'lucide-react';
 import { PublicHeader } from '@/components/PublicHeader';
 import { useAuth } from '@/hooks/useAuth';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { createUserProfile } from '@/services/userService';
+import { createUserProfile, type UserProfileData } from '@/services/userService';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email.' }),
@@ -80,41 +80,32 @@ export default function AuthPage() {
     }
   };
   
-  const onLogin = async (values: z.infer<typeof formSchema>) => {
+  const handleFormSubmit = async (values: z.infer<typeof formSchema>) => {
     if (!isFirebaseConfigured || !auth || !values.password) return;
     setIsLoading(true);
-    try {
-      await signInWithEmailAndPassword(auth, email, values.password);
-      toast({ title: 'Success', description: "You've successfully signed in." });
-      router.push('/home');
-    } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Login Failed', description: 'Invalid password. Please try again.' });
-    } finally {
-      setIsLoading(false);
-    }
-  }
 
-  const onRegister = async (values: z.infer<typeof formSchema>) => {
-    if (!isFirebaseConfigured || !auth || !values.password) return;
-    setIsLoading(true);
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, values.password);
-      const { uid, email: userEmail, displayName, photoURL } = userCredential.user;
-      await createUserProfile({ uid, email: userEmail, displayName, photoURL });
-      toast({ title: 'Account Created', description: "You've successfully created your account." });
-      router.push('/home');
-    } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Sign Up Failed', description: error.message });
-    } finally {
-      setIsLoading(false);
-    }
-  }
-  
-  const handleFormSubmit = (values: z.infer<typeof formSchema>) => {
     if (step === 'loginPassword') {
-      onLogin(values);
+      try {
+        await signInWithEmailAndPassword(auth, email, values.password);
+        toast({ title: 'Success', description: "You've successfully signed in." });
+        router.push('/home');
+      } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Login Failed', description: 'Invalid password. Please try again.' });
+      } finally {
+        setIsLoading(false);
+      }
     } else if (step === 'registerPassword') {
-      onRegister(values);
+      try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, values.password);
+        const { uid, email: userEmail, displayName, photoURL } = userCredential.user;
+        await createUserProfile({ uid, email: userEmail, displayName, photoURL });
+        toast({ title: 'Account Created', description: "You've successfully created your account." });
+        router.push('/home');
+      } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Sign Up Failed', description: error.message });
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 

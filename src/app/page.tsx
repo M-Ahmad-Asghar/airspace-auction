@@ -107,7 +107,7 @@ export default function AuthPage() {
         await createUserProfile({ uid, email: userEmail, displayName, photoURL, emailVerified });
 
         toast({ title: 'Account Created', description: "Registration successful! Please check your email to verify your account." });
-        router.push('/home'); // Will be redirected to /verify-email by ProtectedRoute
+        router.push('/home');
       }
     } catch (error: any) {
         let errorMessage = "An unexpected error occurred. Please try again.";

@@ -1,7 +1,7 @@
 "use client";
 
 import { type ReactNode, useEffect } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { Skeleton } from './ui/skeleton';
 
@@ -12,7 +12,6 @@ interface ProtectedRouteProps {
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { user, loading, isFirebaseConfigured } = useAuth();
   const router = useRouter();
-  const pathname = usePathname();
 
   useEffect(() => {
     if (loading) {
@@ -24,16 +23,11 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
       router.push('/');
       return;
     }
-
-    // Redirect to verification page if email is not verified and we are not on that page
-    if (user && !user.emailVerified && pathname !== '/verify-email') {
-      router.push('/verify-email');
-    }
     
-  }, [user, loading, router, isFirebaseConfigured, pathname]);
+  }, [user, loading, router, isFirebaseConfigured]);
 
   // Show skeleton while loading, or if user is being redirected.
-  if (loading || !user || (user && !user.emailVerified && pathname !== '/verify-email')) {
+  if (loading || !user) {
      return (
       <div className="flex h-screen w-full items-center justify-center">
         <div className="flex flex-col items-center space-y-4">
@@ -47,6 +41,6 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     )
   }
 
-  // If user is logged in and verified (or on the verify page), show the content
+  // If user is logged in, show the content
   return <>{children}</>;
 }

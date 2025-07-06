@@ -1,3 +1,4 @@
+
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Header } from '@/components/Header';
 import { ListingCard } from '@/components/ListingCard';
@@ -5,12 +6,23 @@ import { getRecentListings } from '@/services/listingService';
 import type { DocumentData } from 'firebase/firestore';
 
 function formatListingData(listing: DocumentData) {
+    if (listing.category === 'Aircraft') {
+      return {
+          id: listing.id,
+          title: `${listing.year} ${listing.manufacturer} ${listing.model}`,
+          description: listing.description,
+          imageUrl: listing.imageUrls?.[0] || 'https://placehold.co/600x400.png',
+          imageHint: `${listing.manufacturer} ${listing.model}`
+      };
+    }
+    
+    // Default formatter for Parts and other categories
     return {
         id: listing.id,
-        title: `${listing.year} ${listing.manufacturer} ${listing.model}`,
+        title: listing.title || `${listing.manufacturer} Part`,
         description: listing.description,
         imageUrl: listing.imageUrls?.[0] || 'https://placehold.co/600x400.png',
-        imageHint: `${listing.manufacturer} ${listing.model}`
+        imageHint: `${listing.manufacturer} part`
     };
 }
 

@@ -122,7 +122,7 @@ export function Header() {
         <div className="container mx-auto px-4">
             <div className="flex items-center justify-center gap-4 sm:gap-6 h-12 text-white text-xs sm:text-sm font-medium overflow-x-auto">
                 {CATEGORIES.map((category) => (
-                  <Link key={category.name} href="#" className="hover:underline flex-shrink-0">
+                  <Link key={category.name} href={category.href} className="hover:underline flex-shrink-0">
                     {category.name}
                   </Link>
                 ))}

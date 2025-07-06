@@ -45,6 +45,20 @@ export interface AircraftListingData {
   youtubeLink?: string;
 }
 
+export interface PartListingData {
+  userId: string;
+  category: string;
+  title: string;
+  description: string;
+  images: File[];
+  location: string;
+  price: number;
+  year?: number;
+  manufacturer: string;
+  hours?: number;
+  upgrade: boolean;
+}
+
 /**
  * Creates a new aircraft listing in Firestore and uploads images to Storage.
  * @param formData The validated form data.
@@ -76,6 +90,41 @@ export async function createAircraftListing(formData: AircraftListingData, userI
     createdAt: serverTimestamp(),
   };
   
+  const docRef = await addDoc(listingCollectionRef, newListingDoc);
+
+  return docRef.id;
+}
+
+
+/**
+ * Creates a new part listing in Firestore and uploads images to Storage.
+ * @param formData The validated form data.
+ * @param userId The UID of the user creating the listing.
+ * @returns The ID of the newly created listing document.
+ */
+export async function createPartListing(formData: PartListingData, userId: string): Promise<string> {
+  if (!isFirebaseConfigured || !db || !storage) {
+    throw new Error('Firebase is not configured.');
+  }
+
+  const { images, ...listingData } = formData;
+
+  const imageUrls = await Promise.all(
+    images.map(async (image) => {
+      const imageRef = ref(storage, `listings/${userId}/${uuidv4()}-${image.name}`);
+      await uploadBytes(imageRef, image);
+      return getDownloadURL(imageRef);
+    })
+  );
+
+  const listingCollectionRef = collection(db, 'listings');
+  const newListingDoc = {
+    ...listingData,
+    userId,
+    imageUrls,
+    createdAt: serverTimestamp(),
+  };
+
   const docRef = await addDoc(listingCollectionRef, newListingDoc);
 
   return docRef.id;

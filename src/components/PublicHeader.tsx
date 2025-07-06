@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -5,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, Mic, Plus, MessageSquare, User } from 'lucide-react';
 import { Logo } from './Logo';
+import { CATEGORIES } from '@/lib/constants';
 
 
 export function PublicHeader() {
@@ -43,12 +45,12 @@ export function PublicHeader() {
       <nav className="bg-accent">
         <div className="container mx-auto px-4">
             <div className="flex items-center justify-center gap-4 sm:gap-6 h-12 text-white text-xs sm:text-sm font-medium overflow-x-auto">
-                <Link href="#" className="hover:underline flex-shrink-0">Aircraft</Link>
-                <Link href="#" className="hover:underline flex-shrink-0">Parts</Link>
-                <Link href="#" className="hover:underline flex-shrink-0">Events</Link>
-                <Link href="#" className="hover:underline flex-shrink-0">Real Estate</Link>
-                <Link href="#" className="hover:underline flex-shrink-0">Places</Link>
-                <Link href="#" className="hover:underline flex-shrink-0">Services</Link>
+                <Link href="/home" className="hover:underline flex-shrink-0">All</Link>
+                {CATEGORIES.map((category) => (
+                  <Link key={category.name} href={`/home?category=${category.name}`} className="hover:underline flex-shrink-0">
+                    {category.name}
+                  </Link>
+                ))}
             </div>
         </div>
       </nav>

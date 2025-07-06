@@ -4,6 +4,8 @@ import { Header } from '@/components/Header';
 import { ListingCard } from '@/components/ListingCard';
 import { getRecentListings } from '@/services/listingService';
 import type { DocumentData } from 'firebase/firestore';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 
 function formatListingData(listing: DocumentData) {
     if (listing.category === 'Aircraft') {
@@ -59,9 +61,9 @@ function formatListingData(listing: DocumentData) {
 }
 
 
-export default async function HomePage() {
-  
-  const listings = await getRecentListings();
+export default async function HomePage({ searchParams }: { searchParams?: { category?: string } }) {
+  const category = searchParams?.category;
+  const listings = await getRecentListings({ category });
   const formattedListings = listings.map(formatListingData);
 
   return (
@@ -69,7 +71,14 @@ export default async function HomePage() {
       <div className="flex flex-col min-h-screen">
         <Header />
         <main className="flex-grow container py-8">
-            <h1 className="text-3xl font-bold mb-6">Recent Listings</h1>
+            <div className="flex justify-between items-center mb-6">
+              <h1 className="text-3xl font-bold">{category ? `${category} Listings` : 'Recent Listings'}</h1>
+              {category && (
+                <Button asChild variant="outline">
+                  <Link href="/home">Clear Filter</Link>
+                </Button>
+              )}
+            </div>
             {formattedListings.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
                     {formattedListings.map((listing) => (
@@ -78,8 +87,8 @@ export default async function HomePage() {
                 </div>
             ) : (
                 <div className="text-center py-16">
-                    <h2 className="text-2xl font-semibold">No listings yet!</h2>
-                    <p className="text-muted-foreground mt-2">Why not be the first to post one?</p>
+                    <h2 className="text-2xl font-semibold">No listings found!</h2>
+                    <p className="text-muted-foreground mt-2">There are no listings in this category. Try another one!</p>
                 </div>
             )}
         </main>

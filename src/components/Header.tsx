@@ -121,8 +121,11 @@ export function Header() {
       <nav className="bg-accent">
         <div className="container mx-auto px-4">
             <div className="flex items-center justify-center gap-4 sm:gap-6 h-12 text-white text-xs sm:text-sm font-medium overflow-x-auto">
+                <Link href="/home" className="hover:underline flex-shrink-0">
+                  All
+                </Link>
                 {CATEGORIES.map((category) => (
-                  <Link key={category.name} href={category.href} className="hover:underline flex-shrink-0">
+                  <Link key={category.name} href={`/home?category=${category.name}`} className="hover:underline flex-shrink-0">
                     {category.name}
                   </Link>
                 ))}

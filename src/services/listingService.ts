@@ -10,7 +10,9 @@ import {
   orderBy,
   limit,
   serverTimestamp,
+  where,
   type DocumentData,
+  type Query,
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { v4 as uuidv4 } from 'uuid';
@@ -317,11 +319,11 @@ export async function createServiceListing(formData: ServiceListingData, userId:
 
 
 /**
- * Fetches the most recent listings from Firestore.
- * @param count The number of listings to fetch.
+ * Fetches listings from Firestore, with an optional category filter.
+ * @param options An object with optional `category` and `count`.
  * @returns An array of listing objects.
  */
-export async function getRecentListings(count: number = 10): Promise<DocumentData[]> {
+export async function getRecentListings({ category, count = 10 }: { category?: string; count?: number } = {}): Promise<DocumentData[]> {
     if (!isFirebaseConfigured || !db) {
         console.warn('Firebase is not configured, returning empty array.');
         return [];
@@ -329,7 +331,14 @@ export async function getRecentListings(count: number = 10): Promise<DocumentDat
 
     try {
         const listingsCollectionRef = collection(db, 'listings');
-        const q = query(listingsCollectionRef, orderBy('createdAt', 'desc'), limit(count));
+        let q: Query<DocumentData>;
+
+        if (category) {
+            q = query(listingsCollectionRef, where('category', '==', category), orderBy('createdAt', 'desc'), limit(count));
+        } else {
+            q = query(listingsCollectionRef, orderBy('createdAt', 'desc'), limit(count));
+        }
+
         const querySnapshot = await getDocs(q);
 
         return querySnapshot.docs.map(doc => ({
@@ -337,7 +346,7 @@ export async function getRecentListings(count: number = 10): Promise<DocumentDat
             ...doc.data(),
         }));
     } catch (error) {
-        console.error("Error fetching recent listings:", error);
+        console.error("Error fetching listings:", error);
         throw new Error("Failed to fetch listings from Firestore.");
     }
 }

@@ -95,6 +95,17 @@ export interface PlaceListingData {
   upgrade: boolean;
 }
 
+export interface ServiceListingData {
+    userId: string;
+    category: string;
+    title: string;
+    images: File[];
+    location: string;
+    price: number;
+    description: string;
+    upgrade: boolean;
+}
+
 
 /**
  * Creates a new aircraft listing in Firestore and uploads images to Storage.
@@ -268,6 +279,41 @@ export async function createPlaceListing(formData: PlaceListingData, userId: str
 
   return docRef.id;
 }
+
+/**
+ * Creates a new service listing in Firestore and uploads images to Storage.
+ * @param formData The validated form data.
+ * @param userId The UID of the user creating the listing.
+ * @returns The ID of the newly created listing document.
+ */
+export async function createServiceListing(formData: ServiceListingData, userId: string): Promise<string> {
+  if (!isFirebaseConfigured || !db || !storage) {
+    throw new Error('Firebase is not configured.');
+  }
+
+  const { images, ...listingData } = formData;
+
+  const imageUrls = await Promise.all(
+    images.map(async (image) => {
+      const imageRef = ref(storage, `listings/${userId}/${uuidv4()}-${image.name}`);
+      await uploadBytes(imageRef, image);
+      return getDownloadURL(imageRef);
+    })
+  );
+
+  const listingCollectionRef = collection(db, 'listings');
+  const newListingDoc = {
+    ...listingData,
+    userId,
+    imageUrls,
+    createdAt: serverTimestamp(),
+  };
+
+  const docRef = await addDoc(listingCollectionRef, newListingDoc);
+
+  return docRef.id;
+}
+
 
 
 /**

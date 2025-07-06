@@ -38,6 +38,14 @@ function formatListingData(listing: DocumentData) {
           imageUrl: listing.imageUrls?.[0] || 'https://placehold.co/600x400.png',
           imageHint: 'travel destination'
       };
+    } else if (listing.category === 'Services') {
+      return {
+          id: listing.id,
+          title: listing.title || 'Service Listing',
+          description: listing.description,
+          imageUrl: listing.imageUrls?.[0] || 'https://placehold.co/600x400.png',
+          imageHint: 'professional service'
+      };
     }
     
     // Default formatter for Parts and other categories

@@ -5,7 +5,7 @@ export const CATEGORIES = [
   { name: 'Events', href: '/create-listing/events' },
   { name: 'Real Estate', href: '/create-listing/real-estate' },
   { name: 'Places', href: '/create-listing/places' },
-  { name: 'Services', href: '/create-listing' },
+  { name: 'Services', href: '/create-listing/services' },
 ];
 
 export const AIRCRAFT_TYPES = [

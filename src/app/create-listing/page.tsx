@@ -121,7 +121,7 @@ export default function CreateListingPage() {
           <div className="w-full max-w-5xl mx-auto">
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                <Card className="w-full border-gray-200 shadow-lg">
+                <Card className="w-full border-gray-200">
                   <CardHeader>
                     <CardTitle className="text-3xl font-bold">New Classified Listing</CardTitle>
                   </CardHeader>

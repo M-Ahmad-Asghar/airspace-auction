@@ -52,6 +52,8 @@ export default function AuthPage() {
     defaultValues: { email: '', password: '' },
   });
 
+  // This function is ONLY for the "Continue" button.
+  // It validates email, then checks if the user exists.
   const onContinue = async () => {
     if (!isFirebaseConfigured || !auth) {
       toast({
@@ -62,6 +64,7 @@ export default function AuthPage() {
       return;
     }
     
+    // 1. Validate the email field specifically.
     const isEmailValid = await form.trigger('email');
     if (!isEmailValid) {
       return;
@@ -71,12 +74,14 @@ export default function AuthPage() {
     setIsLoading(true);
 
     try {
+      // 2. Check with Firebase if a user with this email exists.
       const methods = await fetchSignInMethodsForEmail(auth, emailValue);
       setEmail(emailValue);
+      // 3. Set the next step based on the result.
       if (methods.length > 0) {
-        setStep('loginPassword');
+        setStep('loginPassword'); // User exists, so we'll log them in.
       } else {
-        setStep('registerPassword');
+        setStep('registerPassword'); // New user, so we'll register them.
       }
     } catch (error: any) {
       toast({
@@ -89,16 +94,19 @@ export default function AuthPage() {
     }
   };
   
+  // This function handles the final submission (Login or Register)
   const handleFormSubmit = async (values: z.infer<typeof formSchema>) => {
     if (!isFirebaseConfigured || !auth || !values.password) return;
     setIsLoading(true);
 
     try {
       if (step === 'loginPassword') {
+        // This is the login flow
         await signInWithEmailAndPassword(auth, email, values.password);
         toast({ title: 'Success', description: "You've successfully signed in." });
         router.push('/home');
       } else if (step === 'registerPassword') {
+        // This is the register flow
         const userCredential = await createUserWithEmailAndPassword(auth, email, values.password);
         const { uid, email: userEmail, displayName, photoURL } = userCredential.user;
         await createUserProfile({ uid, email: userEmail, displayName, photoURL });
@@ -131,6 +139,7 @@ export default function AuthPage() {
     const provider = new GoogleAuthProvider();
     try {
         const result = await signInWithPopup(auth, provider);
+        // After google sign-in, we ensure a profile exists in our DB
         const { uid, email, displayName, photoURL } = result.user;
         await createUserProfile({ uid, email, displayName, photoURL });
         toast({ title: "Success", description: "You've successfully signed in with Google." });

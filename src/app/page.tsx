@@ -177,7 +177,7 @@ async function Listings({ filters }: { filters: SearchFilters }) {
 
   return (
       <>
-        <div className="flex items-center mb-6">
+        <div className="mb-6">
             <FilterSort />
         </div>
 

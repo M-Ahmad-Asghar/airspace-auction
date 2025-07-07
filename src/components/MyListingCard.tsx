@@ -1,4 +1,3 @@
-
 "use client";
 
 import Image from 'next/image';
@@ -7,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Card, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FilePenLine, Trash2, Loader2, Star, MapPin } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,6 +18,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { CATEGORIES } from '@/lib/constants';
 
 interface MyListingCardProps {
   listing: {
@@ -86,13 +87,17 @@ export function MyListingCard({ listing, onDelete, isDeleting }: MyListingCardPr
               <span className="text-muted-foreground">({listing.ratingCount})</span>
             </div>
           </div>
-          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-            <MapPin className="h-4 w-4" />
-            <span>{listing.location}</span>
+           <Separator />
+           <div className="flex justify-between items-center text-sm text-muted-foreground">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <MapPin className="h-4 w-4 flex-shrink-0" />
+              <span className="truncate">{listing.location}</span>
+            </div>
+            <span className="flex-shrink-0">{listing.postedDate}</span>
           </div>
         </div>
-        <CardFooter className="p-4 border-t mt-auto bg-card">
-          <div className="flex w-full justify-center gap-2">
+        <CardFooter className="p-4 bg-card justify-center">
+           <div className="flex w-full justify-center gap-2 pt-4 border-t">
               <Button variant="outline" size="sm" onClick={handleEdit}>
                   <FilePenLine className="mr-2 h-4 w-4" />
                   Edit
@@ -130,6 +135,3 @@ export function MyListingCard({ listing, onDelete, isDeleting }: MyListingCardPr
     </Link>
   );
 }
-
-// Need to import CATEGORIES to get the edit link
-import { CATEGORIES } from '@/lib/constants';

@@ -1,4 +1,3 @@
-
 "use client";
 
 import Image from 'next/image';
@@ -54,7 +53,7 @@ export function ListingCard({ listing }: ListingCardProps) {
         </div>
         <div className="p-4 space-y-3 bg-card">
           <div className="flex justify-between items-start">
-            <h3 className="font-bold text-xl">{listing.title}</h3>
+            <h3 className="font-bold text-xl truncate">{listing.title}</h3>
             <Button variant="ghost" size="icon" className="text-muted-foreground -mr-2 -mt-1" onClick={handleActionClick}>
               <Share2 className="h-5 w-5" />
             </Button>
@@ -73,14 +72,14 @@ export function ListingCard({ listing }: ListingCardProps) {
               <AvatarImage src={listing.userAvatarUrl} alt={listing.userName} data-ai-hint="man portrait"/>
               <AvatarFallback>{listing.userName.charAt(0)}</AvatarFallback>
             </Avatar>
-            <div className="flex-grow">
-              <p className="font-bold">{listing.userName}</p>
+            <div className="flex-grow min-w-0">
+              <p className="font-bold truncate">{listing.userName}</p>
               <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                <MapPin className="h-4 w-4" />
-                <span>{listing.location}</span>
+                <MapPin className="h-4 w-4 flex-shrink-0" />
+                <span className="truncate">{listing.location}</span>
               </div>
             </div>
-            <span className="text-sm text-muted-foreground self-end">{listing.postedDate}</span>
+            <span className="text-sm text-muted-foreground self-end flex-shrink-0">{listing.postedDate}</span>
           </div>
         </div>
       </Card>

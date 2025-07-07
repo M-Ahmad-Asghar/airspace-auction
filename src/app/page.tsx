@@ -7,13 +7,18 @@ import { FilterSort } from '@/components/FilterSort';
 import { Suspense } from 'react';
 
 function formatListingData(listing: DocumentData) {
+  const createdAt = listing.createdAt;
+  // Convert timestamp object to ISO string if it exists
+  const postDateStr = (createdAt && createdAt.seconds)
+    ? new Date(createdAt.seconds * 1000).toISOString()
+    : new Date().toISOString(); // Fallback if no date
+
   const formattedData = {
     id: listing.id,
     price: listing.price || 0,
     imageUrl: listing.imageUrls?.[0] || `https://placehold.co/600x450.png`,
     location: listing.location || 'Unknown Location',
-    // Dates are now strings after serialization
-    postedDate: listing.createdAt, 
+    postedDate: postDateStr,
     userName: 'Joseph Andrew', // Placeholder
     userAvatarUrl: 'https://placehold.co/40x40.png', // Placeholder
     rating: 5.0, // Placeholder
@@ -77,7 +82,7 @@ async function Listings({ filters }: { filters: SearchFilters }) {
                 {filters.searchTerm ? `Results for "${filters.searchTerm}"` : 'Filtered Results'}
             </h1>
         ) : (
-            <h1 className="text-3xl font-bold">Recent Listings</h1>
+            <FilterSort />
         )}
       </div>
 
@@ -117,7 +122,6 @@ export default function HomePage({ searchParams }: { searchParams?: SearchFilter
       <div className="flex flex-col min-h-screen">
         <Header />
         <main className="flex-grow container mx-auto px-4 py-8">
-            <FilterSort />
             <Suspense fallback={<div className="text-center p-12">Loading listings...</div>}>
                 <Listings filters={filters} />
             </Suspense>

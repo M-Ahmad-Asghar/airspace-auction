@@ -17,10 +17,13 @@ import {
   deleteDoc,
   type DocumentData,
   type Query,
+  QueryConstraint,
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { v4 as uuidv4 } from 'uuid';
 
+
+// Interfaces for listing creation forms
 export interface AircraftListingData {
   userId: string;
   category: string;
@@ -112,6 +115,23 @@ export interface ServiceListingData {
     upgrade: boolean;
 }
 
+// Interface for search filters
+export interface SearchFilters {
+  category?: string;
+  searchTerm?: string;
+  type?: string;
+  yearMin?: number;
+  yearMax?: number;
+  manufacturer?: string;
+  model?: string;
+  airframeHrMin?: number;
+  airframeHrMax?: number;
+  engineHrMin?: number;
+  engineHrMax?: number;
+  count?: number;
+}
+
+
 async function uploadImages(images: File[], userId: string): Promise<string[]> {
     if (!storage) throw new Error('Firebase Storage is not configured.');
     const imageUrls = await Promise.all(
@@ -197,34 +217,59 @@ export async function createServiceListing(formData: Omit<ServiceListingData, 'u
 }
 
 
-export async function getRecentListings({ category, count = 10 }: { category?: string; count?: number } = {}): Promise<DocumentData[]> {
+export async function getListings(filters: SearchFilters = {}): Promise<DocumentData[]> {
     if (!isFirebaseConfigured || !db) {
         console.warn('Firebase is not configured, returning empty array.');
         return [];
     }
 
+    const {
+        category, searchTerm, type, yearMin, yearMax, manufacturer, model, count = 20
+    } = filters;
+
     try {
         const listingsCollectionRef = collection(db, 'listings');
-        let q: Query<DocumentData>;
+        const constraints: QueryConstraint[] = [];
 
-        if (category) {
-            q = query(listingsCollectionRef, where('category', '==', category), orderBy('createdAt', 'desc'), limit(count));
-        } else {
-            q = query(listingsCollectionRef, orderBy('createdAt', 'desc'), limit(count));
+        // --- Equality and text search filters ---
+        if (category) constraints.push(where('category', '==', category));
+        if (type) constraints.push(where('type', '==', type));
+        if (manufacturer) constraints.push(where('manufacturer', '==', manufacturer));
+        if (model) constraints.push(where('model', '==', model));
+        if (searchTerm) {
+             constraints.push(where('title', '>=', searchTerm));
+             constraints.push(where('title', '<=', searchTerm + '\uf8ff'));
         }
+
+        // --- Range filters (only one field can have a range filter in Firestore) ---
+        // We prioritize 'year' for the backend query. Other ranges will be client-filtered.
+        if (yearMin) constraints.push(where('year', '>=', yearMin));
+        if (yearMax) constraints.push(where('year', '<=', yearMax));
+
+        // --- Sorting and Limiting ---
+        constraints.push(orderBy(yearMin || yearMax || searchTerm ? 'year' : 'createdAt', 'desc'));
+        constraints.push(limit(count));
+
+        const q = query(listingsCollectionRef, ...constraints);
         const querySnapshot = await getDocs(q);
+        
         return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
     } catch (error) {
-        console.error("Error fetching listings, likely due to a missing Firestore index:", error);
+        console.error("Error fetching listings:", error);
+        // Fallback for missing indexes - fetch recent and filter client-side (less efficient)
         try {
             console.log('Falling back to a less efficient query. Please create the recommended Firestore index.');
             const fallbackQuery = query(collection(db, 'listings'), orderBy('createdAt', 'desc'), limit(50));
             const querySnapshot = await getDocs(fallbackQuery);
             let listings = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-            if (category) {
-                listings = listings.filter(listing => listing.category === category);
-            }
+            // Manual filtering
+            if (category) listings = listings.filter(l => l.category === category);
+            if (searchTerm) listings = listings.filter(l => l.title?.toLowerCase().includes(searchTerm.toLowerCase()));
+            if (yearMin) listings = listings.filter(l => l.year >= yearMin);
+            // ... add other filters here if needed for fallback
+
             return listings.slice(0, count);
 
         } catch (fallbackError) {
@@ -234,13 +279,15 @@ export async function getRecentListings({ category, count = 10 }: { category?: s
     }
 }
 
+
 export async function getListingsByUserId(userId: string): Promise<DocumentData[]> {
     if (!isFirebaseConfigured || !db || !userId) return [];
 
     try {
         const q = query(collection(db, 'listings'), where('userId', '==', userId));
         const querySnapshot = await getDocs(q);
-        return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const listings = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        return JSON.parse(JSON.stringify(listings));
     } catch (error) {
         console.error("Error fetching user listings:", error);
         return [];
@@ -254,11 +301,14 @@ export async function getListingById(listingId: string): Promise<DocumentData | 
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
             const data = docSnap.data();
-            // Convert Firestore Timestamps to JS Date objects
-            if (data.date && data.date.toDate) {
-                data.date = data.date.toDate();
-            }
-            return { id: docSnap.id, ...data };
+            const listing = { id: docSnap.id, ...data };
+            // Convert Firestore Timestamps to JS Date objects before serializing
+            return JSON.parse(JSON.stringify(listing, (key, value) => {
+                if (value && value.seconds !== undefined) {
+                    return new Date(value.seconds * 1000).toISOString();
+                }
+                return value;
+            }));
         }
         return null;
     } catch (error) {

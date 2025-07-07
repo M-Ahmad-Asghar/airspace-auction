@@ -1,3 +1,4 @@
+
 "use client";
 
 import Image from 'next/image';
@@ -7,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Heart, Share2, Star, MapPin } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
 
 interface ListingCardProps {
   listing: {
@@ -16,7 +18,7 @@ interface ListingCardProps {
     imageUrl: string;
     imageHint: string;
     location: string;
-    postedDate: string;
+    postedDate: string; // ISO string
     userName: string;
     userAvatarUrl: string;
     rating: number;
@@ -32,6 +34,11 @@ export function ListingCard({ listing }: ListingCardProps) {
     // Action logic here, e.g., adding to favorites
     console.log('Action button clicked');
   };
+  
+  const formattedDate = listing.postedDate 
+    ? formatDistanceToNow(new Date(listing.postedDate), { addSuffix: true })
+    : 'N/A';
+
 
   return (
     <Link href={`/listing/${listing.id}`} className="block">
@@ -59,7 +66,7 @@ export function ListingCard({ listing }: ListingCardProps) {
             </Button>
           </div>
           <div className="flex justify-between items-center">
-            <p className="text-2xl font-bold text-primary">${Number(listing.price).toFixed(2)}</p>
+            <p className="text-2xl font-bold text-primary">${Number(listing.price).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
             <div className="flex items-center gap-1.5">
               <Star className="text-primary fill-primary h-5 w-5" />
               <span className="font-bold">{listing.rating.toFixed(1)}</span>
@@ -79,7 +86,7 @@ export function ListingCard({ listing }: ListingCardProps) {
                 <span className="truncate">{listing.location}</span>
               </div>
             </div>
-            <span className="text-sm text-muted-foreground self-end flex-shrink-0">{listing.postedDate}</span>
+            <span className="text-sm text-muted-foreground self-end flex-shrink-0 whitespace-nowrap">{formattedDate}</span>
           </div>
         </div>
       </Card>

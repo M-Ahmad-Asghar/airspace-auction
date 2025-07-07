@@ -1,3 +1,4 @@
+
 "use client";
 
 import Image from 'next/image';
@@ -19,6 +20,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { CATEGORIES } from '@/lib/constants';
+import { formatDistanceToNow } from 'date-fns';
 
 interface MyListingCardProps {
   listing: {
@@ -28,7 +30,7 @@ interface MyListingCardProps {
     imageUrl: string;
     imageHint: string;
     location: string;
-    postedDate: string;
+    postedDate: string; // ISO string
     rating: number;
     ratingCount: number;
     category: string;
@@ -47,7 +49,8 @@ export function MyListingCard({ listing, onDelete, isDeleting }: MyListingCardPr
     if (categoryInfo) {
       router.push(`${categoryInfo.href}?id=${listing.id}`);
     } else {
-      console.error(`Could not find category info for: ${listing.category}`);
+      // Default to aircraft if category not found
+      router.push(`/create-listing?id=${listing.id}`);
     }
   };
 
@@ -61,6 +64,10 @@ export function MyListingCard({ listing, onDelete, isDeleting }: MyListingCardPr
     e.stopPropagation();
     e.preventDefault();
   }
+  
+  const formattedDate = listing.postedDate 
+    ? formatDistanceToNow(new Date(listing.postedDate), { addSuffix: true })
+    : 'N/A';
 
   return (
     <Link href={`/listing/${listing.id}`} className="block">
@@ -80,7 +87,7 @@ export function MyListingCard({ listing, onDelete, isDeleting }: MyListingCardPr
         <div className="p-4 space-y-3 flex-grow bg-card">
           <h3 className="font-bold text-xl truncate">{listing.title}</h3>
           <div className="flex justify-between items-center">
-            <p className="text-2xl font-bold text-primary">${Number(listing.price).toFixed(2)}</p>
+            <p className="text-2xl font-bold text-primary">${Number(listing.price).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
             <div className="flex items-center gap-1.5">
               <Star className="text-primary fill-primary h-5 w-5" />
               <span className="font-bold">{listing.rating.toFixed(1)}</span>
@@ -93,7 +100,7 @@ export function MyListingCard({ listing, onDelete, isDeleting }: MyListingCardPr
               <MapPin className="h-4 w-4 flex-shrink-0" />
               <span className="truncate">{listing.location}</span>
             </div>
-            <span className="flex-shrink-0">{listing.postedDate}</span>
+            <span className="flex-shrink-0 whitespace-nowrap">{formattedDate}</span>
           </div>
         </div>
         <CardFooter className="p-4 bg-card justify-center">

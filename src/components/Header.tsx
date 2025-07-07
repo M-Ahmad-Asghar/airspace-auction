@@ -57,6 +57,17 @@ export function Header() {
       .toUpperCase();
   };
 
+  const handleSearch = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const searchTerm = formData.get('search') as string;
+    if (searchTerm) {
+      router.push(`/home?searchTerm=${encodeURIComponent(searchTerm)}`);
+    } else {
+      router.push('/home');
+    }
+  };
+
 
   return (
     <header className="w-full border-b bg-white sticky top-0 z-50">
@@ -66,15 +77,16 @@ export function Header() {
             <Logo className="h-9 w-auto" />
           </Link>
           <div className="flex-1 max-w-xl mx-4 hidden md:block">
-            <div className="relative">
+            <form onSubmit={handleSearch} className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
               <Input
                 type="search"
+                name="search"
                 placeholder="Search here"
                 className="pl-10 pr-10 w-full bg-gray-100 border-transparent focus:bg-white focus:border-input"
               />
               <Mic className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-            </div>
+            </form>
           </div>
           <div className="flex items-center gap-2">
              {user ? (

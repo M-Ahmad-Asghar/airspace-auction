@@ -145,7 +145,7 @@ export function ListingDetailView({ listing }: { listing: DocumentData }) {
      <>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 my-8">
         {listing.price && <StatCard icon={<Tag size={28} />} label="Price" value={`$${listing.price.toLocaleString()}`} />}
-        {listing.date && <StatCard icon={<CalendarDays size={28} />} label="Date" value={format(listing.date.toDate(), 'MMM dd, yyyy')} />}
+        {listing.date && <StatCard icon={<CalendarDays size={28} />} label="Date" value={format(new Date(listing.date), 'MMM dd, yyyy')} />}
         {listing.location && <StatCard icon={<MapPin size={28} />} label="Location" value={listing.location} />}
       </div>
     </>

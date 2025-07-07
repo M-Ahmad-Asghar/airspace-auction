@@ -5,11 +5,14 @@ import { notFound } from 'next/navigation';
 import { Header } from '@/components/Header';
 
 export default async function ListingDetailPage({ params }: { params: { id: string } }) {
-  const listing = await getListingById(params.id);
+  const listingData = await getListingById(params.id);
 
-  if (!listing) {
+  if (!listingData) {
     notFound();
   }
+
+  // Serialize the listing data to make it a plain object, converting Timestamps and Dates to strings.
+  const listing = JSON.parse(JSON.stringify(listingData));
 
   return (
     <div className="bg-background">

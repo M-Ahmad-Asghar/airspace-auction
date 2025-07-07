@@ -42,7 +42,7 @@ export function ListingCard({ listing }: ListingCardProps) {
 
   return (
     <Link href={`/listing/${listing.id}`} className="block">
-      <Card className="overflow-hidden transition-shadow duration-300 hover:shadow-xl rounded-2xl border group">
+      <Card className="overflow-hidden transition-shadow duration-300 hover:shadow-xl rounded-0 border group">
         <div className="relative">
           <div className="aspect-[4/3] relative">
             <Image
@@ -66,7 +66,7 @@ export function ListingCard({ listing }: ListingCardProps) {
             </Button>
           </div>
           <div className="flex justify-between items-center">
-            <p className="text-2xl font-bold text-primary">${Number(listing.price).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+            <p className="text-0 font-bold text-primary">${Number(listing.price).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
             <div className="flex items-center gap-1.5">
               <Star className="text-primary fill-primary h-5 w-5" />
               <span className="font-bold">{listing.rating.toFixed(1)}</span>

@@ -99,7 +99,7 @@ export function Footer() {
             </div>
             <div>
               <h4 className="font-bold text-foreground mb-4 text-sm">SHOP FASTER WITH THE APP</h4>
-              <div className="flex gap-2">
+              <div className="flex gap-2 items-center">
                 <Link href="#">
                   <Image src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Get it on Google Play" width={135} height={40} />
                 </Link>

@@ -10,13 +10,12 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { AIRCRAFT_MANUFACTURERS, AIRCRAFT_MODELS, AIRCRAFT_TYPES } from '@/lib/constants';
-import { Filter, Search, X } from 'lucide-react';
+import { Filter, Search } from 'lucide-react';
 
 export function FilterSort() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Initialize state from URL params
   const [searchTerm, setSearchTerm] = useState(searchParams.get('searchTerm') || '');
   const [type, setType] = useState(searchParams.get('type') || '');
   const [year, setYear] = useState<[number, number]>([
@@ -36,48 +35,58 @@ export function FilterSort() {
   
   const [open, setOpen] = useState(false);
 
-  // Update state if URL params change externally
   useEffect(() => {
-    setSearchTerm(searchParams.get('searchTerm') || '');
-    setType(searchParams.get('type') || '');
-    setYear([
+    if (open) {
+      setSearchTerm(searchParams.get('searchTerm') || '');
+      setType(searchParams.get('type') || '');
+      setYear([
         Number(searchParams.get('yearMin')) || 1990,
         Number(searchParams.get('yearMax')) || new Date().getFullYear(),
-    ]);
-    setManufacturer(searchParams.get('manufacturer') || '');
-    setModel(searchParams.get('model') || '');
-    setAirframeHr([
+      ]);
+      setManufacturer(searchParams.get('manufacturer') || '');
+      setModel(searchParams.get('model') || '');
+      setAirframeHr([
         Number(searchParams.get('airframeHrMin')) || 1,
         Number(searchParams.get('airframeHrMax')) || 72,
-    ]);
-    setEngineHr([
+      ]);
+      setEngineHr([
         Number(searchParams.get('engineHrMin')) || 0,
         Number(searchParams.get('engineHrMax')) || 56,
-    ]);
-  }, [searchParams]);
+      ]);
+    }
+  }, [open, searchParams]);
 
   const handleApplyFilters = () => {
-    const params = new URLSearchParams(searchParams);
+    const params = new URLSearchParams();
     
-    // Set or remove params based on state
-    if (searchTerm) params.set('searchTerm', searchTerm); else params.delete('searchTerm');
-    if (type) params.set('type', type); else params.delete('type');
-    if (manufacturer) params.set('manufacturer', manufacturer); else params.delete('manufacturer');
-    if (model) params.set('model', model); else params.delete('model');
+    if (searchTerm) params.set('searchTerm', searchTerm);
+    if (type) params.set('type', type);
+    if (manufacturer) params.set('manufacturer', manufacturer);
+    if (model) params.set('model', model);
     
-    params.set('yearMin', String(year[0]));
-    params.set('yearMax', String(year[1]));
-    params.set('airframeHrMin', String(airframeHr[0]));
-    params.set('airframeHrMax', String(airframeHr[1]));
-    params.set('engineHrMin', String(engineHr[0]));
-    params.set('engineHrMax', String(engineHr[1]));
-
+    if (year[0] !== 1990) params.set('yearMin', String(year[0]));
+    if (year[1] !== new Date().getFullYear()) params.set('yearMax', String(year[1]));
+    if (airframeHr[0] !== 1) params.set('airframeHrMin', String(airframeHr[0]));
+    if (airframeHr[1] !== 72) params.set('airframeHrMax', String(airframeHr[1]));
+    if (engineHr[0] !== 0) params.set('engineHrMin', String(engineHr[0]));
+    if (engineHr[1] !== 56) params.set('engineHrMax', String(engineHr[1]));
+    
+    const category = searchParams.get('category');
+    if (category) {
+        params.set('category', category);
+    }
+    
     router.push(`/home?${params.toString()}`);
     setOpen(false);
   };
   
   const handleClearFilters = () => {
-    router.push('/home');
+    const params = new URLSearchParams();
+    const category = searchParams.get('category');
+    if (category) {
+        params.set('category', category);
+    }
+    router.push(`/home?${params.toString()}`);
     setOpen(false);
   }
 
@@ -113,7 +122,7 @@ export function FilterSort() {
               <Input type="number" value={year[0]} onChange={e => setYear([Number(e.target.value), year[1]])} placeholder="Min" />
               <Input type="number" value={year[1]} onChange={e => setYear([year[0], Number(e.target.value)])} placeholder="Max" />
             </div>
-            <Slider value={year} onValueChange={setYear} min={1900} max={new Date().getFullYear()} step={1} className="mt-2" />
+            <Slider value={year} onValueChange={(value) => setYear(value as [number, number])} min={1900} max={new Date().getFullYear()} step={1} className="mt-2" />
           </div>
           <div>
             <Label htmlFor="manufacturer">Manufacturer(s)</Label>
@@ -139,7 +148,7 @@ export function FilterSort() {
               <Input type="number" value={airframeHr[0]} onChange={e => setAirframeHr([Number(e.target.value), airframeHr[1]])} placeholder="Min" />
               <Input type="number" value={airframeHr[1]} onChange={e => setAirframeHr([airframeHr[0], Number(e.target.value)])} placeholder="Max" />
             </div>
-            <Slider value={airframeHr} onValueChange={setAirframeHr} min={0} max={100} step={1} className="mt-2" />
+            <Slider value={airframeHr} onValueChange={(value) => setAirframeHr(value as [number, number])} min={0} max={100} step={1} className="mt-2" />
           </div>
            <div>
             <Label>Engine hr</Label>
@@ -147,7 +156,7 @@ export function FilterSort() {
               <Input type="number" value={engineHr[0]} onChange={e => setEngineHr([Number(e.target.value), engineHr[1]])} placeholder="Min" />
               <Input type="number" value={engineHr[1]} onChange={e => setEngineHr([engineHr[0], Number(e.target.value)])} placeholder="Max" />
             </div>
-            <Slider value={engineHr} onValueChange={setEngineHr} min={0} max={100} step={1} className="mt-2" />
+            <Slider value={engineHr} onValueChange={(value) => setEngineHr(value as [number, number])} min={0} max={100} step={1} className="mt-2" />
           </div>
           <div className="flex justify-end gap-2 pt-4 border-t">
               <Button variant="ghost" onClick={handleClearFilters}>Clear</Button>

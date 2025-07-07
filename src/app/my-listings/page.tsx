@@ -21,7 +21,7 @@ function formatListingData(listing: DocumentData) {
     price: listing.price || 0,
     imageUrl: listing.imageUrls?.[0] || `https://placehold.co/600x450.png`,
     location: listing.location || 'Unknown Location',
-    postedDate: listing.createdAt ? formatDistanceToNow(listing.createdAt.toDate()).replace('about ', '') + ' ago' : 'N/A',
+    postedDate: listing.createdAt?.seconds ? formatDistanceToNow(new Date(listing.createdAt.seconds * 1000)).replace('about ', '') + ' ago' : 'N/A',
     // Placeholders for data not available in the listing document
     rating: 5.0, // Placeholder
     ratingCount: 145, // Placeholder
@@ -71,7 +71,8 @@ export default function MyListingsPage() {
             setLoading(true);
             getListingsByUserId(user.uid)
                 .then(data => {
-                    const sortedData = [...data].sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+                    const plainData = JSON.parse(JSON.stringify(data));
+                    const sortedData = [...plainData].sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
                     const formattedData = sortedData.map(formatListingData);
                     setListings(formattedData);
                 })

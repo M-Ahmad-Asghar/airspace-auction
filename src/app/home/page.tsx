@@ -14,7 +14,7 @@ function formatListingData(listing: DocumentData) {
     price: listing.price || 0,
     imageUrl: listing.imageUrls?.[0] || `https://placehold.co/600x450.png`,
     location: listing.location || 'Unknown Location',
-    postedDate: listing.createdAt ? formatDistanceToNow(listing.createdAt.toDate()).replace('about ', '') + ' ago' : 'N/A',
+    postedDate: listing.createdAt?.seconds ? formatDistanceToNow(new Date(listing.createdAt.seconds * 1000)).replace('about ', '') + ' ago' : 'N/A',
     // Placeholders for data not available in the listing document
     userName: 'Joseph Andrew', // Placeholder
     userAvatarUrl: 'https://placehold.co/40x40.png', // Placeholder
@@ -56,7 +56,8 @@ function formatListingData(listing: DocumentData) {
 
 export default async function HomePage({ searchParams }: { searchParams?: { category?: string } }) {
   const category = searchParams?.category;
-  const listings = await getRecentListings({ category });
+  const listingsData = await getRecentListings({ category });
+  const listings = JSON.parse(JSON.stringify(listingsData));
   const formattedListings = listings.map(formatListingData);
 
   return (

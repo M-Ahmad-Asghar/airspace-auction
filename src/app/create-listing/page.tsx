@@ -17,7 +17,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { ImageUploader } from '@/components/ImageUploader';
-import { createAircraftListing, getYoutubeVideoDetails, type YoutubeVideoDetails, getListingById, updateListing } from '@/services/listingService';
+import { createAircraftListing, getListingById, updateListing } from '@/services/listingService';
+import { getYoutubeVideoDetails, type YoutubeVideoDetails } from '@/services/youtubeService';
 import { CATEGORIES, AIRCRAFT_TYPES, AIRCRAFT_MANUFACTURERS, AIRCRAFT_MODELS } from '@/lib/constants';
 import { Loader2, AlertCircle, X } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';

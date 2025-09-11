@@ -1,5 +1,3 @@
-'use server';
-
 import { db, isFirebaseConfigured } from '@/lib/firebase';
 import {
   collection,
@@ -33,7 +31,7 @@ export interface SavedSearch {
   userId: string;
   title: string;
   filters: {
-    searchTerm?: string; // Added searchTerm field
+    searchTerm?: string;
     category?: string;
     type?: string;
     priceMin?: number;
@@ -48,7 +46,7 @@ export interface SavedSearch {
 }
 
 // Add item to wishlist
-export async function addToWishlist(userId: string, listingData: any): Promise<boolean> {
+export async function addToWishlist(listingId: string, userId: string, listingData: any): Promise<boolean> {
   if (!isFirebaseConfigured || !db) {
     console.error('Firebase not configured');
     return false;
@@ -59,7 +57,7 @@ export async function addToWishlist(userId: string, listingData: any): Promise<b
     const existingQuery = query(
       collection(db, 'wishlist'),
       where('userId', '==', userId),
-      where('listingId', '==', listingData.id)
+      where('listingId', '==', listingId)
     );
     
     const existingSnapshot = await getDocs(existingQuery);
@@ -72,9 +70,9 @@ export async function addToWishlist(userId: string, listingData: any): Promise<b
     // Add to wishlist
     const wishlistData = {
       userId,
-      listingId: listingData.id,
-      title: listingData.title || `${listingData.manufacturer || 'Unknown'} ${listingData.model || 'Item'}`,
-      imageUrl: listingData.imageUrls?.[0] || listingData.imageUrl || 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=100&h=100&fit=crop&crop=center',
+      listingId,
+      title: listingData.title || 'Unknown Item',
+      imageUrl: listingData.image || listingData.imageUrl || 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=100&h=100&fit=crop&crop=center',
       price: listingData.price || 0,
       location: listingData.location || 'Unknown',
       year: listingData.year || new Date().getFullYear(),
@@ -94,13 +92,14 @@ export async function addToWishlist(userId: string, listingData: any): Promise<b
 }
 
 // Remove item from wishlist
-export async function removeFromWishlist(userId: string, listingId: string): Promise<boolean> {
+export async function removeFromWishlist(listingId: string, userId: string): Promise<boolean> {
   if (!isFirebaseConfigured || !db) {
     console.error('Firebase not configured');
     return false;
   }
 
   try {
+    // Find the wishlist item to delete
     const wishlistQuery = query(
       collection(db, 'wishlist'),
       where('userId', '==', userId),
@@ -114,9 +113,9 @@ export async function removeFromWishlist(userId: string, listingId: string): Pro
       return false;
     }
 
-    // Delete the wishlist item
-    const wishlistDoc = wishlistSnapshot.docs[0];
-    await deleteDoc(doc(db, 'wishlist', wishlistDoc.id));
+    // Delete the first matching item
+    const docToDelete = wishlistSnapshot.docs[0];
+    await deleteDoc(doc(db, 'wishlist', docToDelete.id));
     
     console.log('Item removed from wishlist successfully');
     return true;
@@ -127,8 +126,9 @@ export async function removeFromWishlist(userId: string, listingId: string): Pro
 }
 
 // Check if item is in wishlist
-export async function isInWishlist(userId: string, listingId: string): Promise<boolean> {
+export async function isInWishlist(listingId: string, userId: string): Promise<boolean> {
   if (!isFirebaseConfigured || !db) {
+    console.error('Firebase not configured');
     return false;
   }
 
@@ -142,62 +142,68 @@ export async function isInWishlist(userId: string, listingId: string): Promise<b
     const wishlistSnapshot = await getDocs(wishlistQuery);
     return !wishlistSnapshot.empty;
   } catch (error) {
-    console.error('Error checking wishlist status:', error);
+    console.error('Error checking wishlist:', error);
     return false;
   }
 }
 
-// Get user's wishlist items - SIMPLIFIED QUERY (no orderBy to avoid index requirement)
+// Get user's wishlist
 export async function getUserWishlist(userId: string): Promise<WishlistItem[]> {
   if (!isFirebaseConfigured || !db) {
+    console.error('Firebase not configured');
     return [];
   }
 
   try {
-    // Simplified query without orderBy to avoid index requirement
     const wishlistQuery = query(
       collection(db, 'wishlist'),
       where('userId', '==', userId)
     );
     
     const wishlistSnapshot = await getDocs(wishlistQuery);
+    const wishlistItems: WishlistItem[] = [];
     
-    const items = wishlistSnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-      addedAt: doc.data().addedAt?.toDate?.() || new Date(),
-    })) as WishlistItem[];
-
-    // Sort in JavaScript instead of Firebase
-    items.sort((a, b) => b.addedAt.getTime() - a.addedAt.getTime());
+    wishlistSnapshot.forEach((doc) => {
+      const data = doc.data();
+      wishlistItems.push({
+        id: doc.id,
+        userId: data.userId,
+        listingId: data.listingId,
+        title: data.title,
+        imageUrl: data.imageUrl,
+        price: data.price,
+        location: data.location,
+        year: data.year,
+        manufacturer: data.manufacturer,
+        model: data.model,
+        category: data.category,
+        addedAt: data.addedAt?.toDate() || new Date(),
+      });
+    });
     
-    console.log('Fetched wishlist items:', items.length);
-    return items;
+    return wishlistItems;
   } catch (error) {
     console.error('Error fetching wishlist:', error);
     return [];
   }
 }
 
-// Save search
-export async function saveSearch(userId: string, searchData: {
-  title: string;
-  filters: SavedSearch['filters'];
-}): Promise<boolean> {
+// Save search filters
+export async function saveSearch(userId: string, title: string, filters: any): Promise<boolean> {
   if (!isFirebaseConfigured || !db) {
     console.error('Firebase not configured');
     return false;
   }
 
   try {
-    const searchDoc = {
+    const searchData = {
       userId,
-      title: searchData.title,
-      filters: searchData.filters,
+      title,
+      filters,
       createdAt: new Date(),
     };
 
-    await addDoc(collection(db, 'savedSearches'), searchDoc);
+    await addDoc(collection(db, 'savedSearches'), searchData);
     console.log('Search saved successfully');
     return true;
   } catch (error) {
@@ -206,32 +212,34 @@ export async function saveSearch(userId: string, searchData: {
   }
 }
 
-// Get user's saved searches - SIMPLIFIED QUERY (no orderBy to avoid index requirement)
+// Get user's saved searches
 export async function getUserSavedSearches(userId: string): Promise<SavedSearch[]> {
   if (!isFirebaseConfigured || !db) {
+    console.error('Firebase not configured');
     return [];
   }
 
   try {
-    // Simplified query without orderBy to avoid index requirement
     const searchesQuery = query(
       collection(db, 'savedSearches'),
       where('userId', '==', userId)
     );
     
     const searchesSnapshot = await getDocs(searchesQuery);
+    const savedSearches: SavedSearch[] = [];
     
-    const searches = searchesSnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-      createdAt: doc.data().createdAt?.toDate?.() || new Date(),
-    })) as SavedSearch[];
-
-    // Sort in JavaScript instead of Firebase
-    searches.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    searchesSnapshot.forEach((doc) => {
+      const data = doc.data();
+      savedSearches.push({
+        id: doc.id,
+        userId: data.userId,
+        title: data.title,
+        filters: data.filters,
+        createdAt: data.createdAt?.toDate() || new Date(),
+      });
+    });
     
-    console.log('Fetched saved searches:', searches.length);
-    return searches;
+    return savedSearches;
   } catch (error) {
     console.error('Error fetching saved searches:', error);
     return [];
@@ -247,10 +255,27 @@ export async function deleteSavedSearch(searchId: string): Promise<boolean> {
 
   try {
     await deleteDoc(doc(db, 'savedSearches', searchId));
-    console.log('Search deleted successfully');
+    console.log('Saved search deleted successfully');
     return true;
   } catch (error) {
-    console.error('Error deleting search:', error);
+    console.error('Error deleting saved search:', error);
+    return false;
+  }
+}
+
+// Remove item from wishlist by wishlist item ID
+export async function removeFromWishlistById(wishlistItemId: string): Promise<boolean> {
+  if (!isFirebaseConfigured || !db) {
+    console.error('Firebase not configured');
+    return false;
+  }
+
+  try {
+    await deleteDoc(doc(db, 'wishlist', wishlistItemId));
+    console.log('Wishlist item removed successfully');
+    return true;
+  } catch (error) {
+    console.error('Error removing wishlist item:', error);
     return false;
   }
 }

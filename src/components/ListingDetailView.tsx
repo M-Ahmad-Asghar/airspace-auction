@@ -1,330 +1,493 @@
-'use client';
+"use client";
 
-import type { DocumentData } from 'firebase/firestore';
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { Button } from './ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Separator } from '@/components/ui/separator';
 import { 
-  MapPin, 
-  Camera, 
   Heart, 
   Share2, 
-  Bookmark,
-  GaugeCircle,
-  Wrench,
-  Factory,
-  Puzzle,
-  CalendarDays,
-  BedDouble,
-  Bath,
-  Building,
-  Plane,
-  Tag,
-  Users,
-  Briefcase
+  Bookmark, 
+  MapPin, 
+  Calendar, 
+  Clock, 
+  Star,
+  Eye,
+  MessageSquare,
+  Phone,
+  Mail,
+  ExternalLink,
+  ChevronLeft,
+  ChevronRight,
+  ZoomIn,
+  Download,
+  X
 } from 'lucide-react';
-import { format } from 'date-fns';
-import { MessageButton } from './MessageButton';
-
-interface StatCardProps {
-  icon: React.ReactNode;
-  label: string;
-  value: string | number;
-}
-
-const StatCard = ({ icon, label, value }: StatCardProps) => (
-  <div className="flex items-center gap-4 rounded-lg border bg-card p-4 shadow-sm">
-    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-accent/10 text-accent">
-      {icon}
-    </div>
-    <div>
-      <p className="text-sm text-muted-foreground">{label}</p>
-      <p className="text-xl font-bold text-foreground">{value}</p>
-    </div>
-  </div>
-);
-
-
-interface DetailRowProps {
-  label: string;
-  value: string | number | undefined | null;
-}
-const DetailRow = ({ label, value }: DetailRowProps) => {
-  if (!value) return null;
-  return (
-    <div className="flex justify-between border-b py-3 text-sm">
-      <p className="font-medium text-muted-foreground">{label}</p>
-      <p className="font-semibold text-foreground">{value}</p>
-    </div>
-  );
-};
-
-
-interface DetailSectionProps {
-  title: string;
-  children: React.ReactNode;
-}
-const DetailSection = ({ title, children }: DetailSectionProps) => {
-  const childArray = React.Children.toArray(children).filter(Boolean);
-  if (childArray.length === 0) return null;
-
-  return (
-    <div className="pt-8">
-      <h2 className="text-xl font-bold mb-4 text-foreground">{title}</h2>
-      {children}
-    </div>
-  );
-};
+import { useAuth } from '@/hooks/useAuth';
+import { toast } from '@/hooks/use-toast';
+import { formatDistanceToNow } from 'date-fns';
+import { MessageButton } from '@/components/MessageButton';
+import { RatingComponent } from '@/components/RatingComponent';
+import { ShareComponent, ShareButton } from '@/components/ShareComponent';
+import { addToWishlist, removeFromWishlist, isInWishlist } from '@/services/wishlistService';
+import type { DocumentData } from 'firebase/firestore';
 
 export function ListingDetailView({ listing }: { listing: DocumentData }) {
-  const [mainImage, setMainImage] = useState(listing.imageUrls?.[0] || 'https://placehold.co/1200x800.png');
-  
-  const getInitials = (name: string | null | undefined) => {
-    if (!name) return "U";
-    return name.split(" ").map((n) => n[0]).join("").substring(0, 2).toUpperCase();
-  };
-  
-  const renderAircraftDetails = () => (
-    <>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 my-8">
-        {listing.totalAirframeTime && <StatCard icon={<GaugeCircle size={28} />} label="Airframe Hours" value={listing.totalAirframeTime} />}
-        {listing.engineTimeMin && <StatCard icon={<Wrench size={28} />} label="Engine hours" value={listing.engineTimeMin} />}
-        {listing.manufacturer && <StatCard icon={<Factory size={28} />} label="Manufacturer" value={listing.manufacturer} />}
-        {listing.model && <StatCard icon={<Puzzle size={28} />} label="Model" value={listing.model} />}
-        {listing.year && <StatCard icon={<CalendarDays size={28} />} label="Year" value={listing.year} />}
-      </div>
-      <DetailSection title="Aircraft Information">
-        <DetailRow label="Registration" value={listing.registration} />
-        <DetailRow label="Serial Number" value={listing.propellerSerials} />
-        <DetailRow label="Total Airframe Time" value={listing.totalAirframeTime ? `${listing.totalAirframeTime} hrs` : null} />
-        <DetailRow label="Engine Time" value={listing.engineTimeMin ? `${listing.engineTimeMin} hrs` : null} />
-        <DetailRow label="Propeller Time" value={listing.propellerTimeMin ? `${listing.propellerTimeMin} hrs` : null} />
-        <DetailRow label="Inspection Status" value={listing.inspectionStatus} />
-        <DetailRow label="IFR Certified" value={listing.ifr ? 'Yes' : 'No'} />
-      </DetailSection>
-      <DetailSection title="Engine Details">
-        <DetailRow label="Engine Type" value={listing.engineDetails} />
-        <DetailRow label="Propeller Type" value={listing.propellerType} />
-        <DetailRow label="Propeller Serial" value={listing.propellerSerials} />
-      </DetailSection>
-      <DetailSection title="Avionics">
-        <DetailRow label="Avionics Package" value={listing.avionics} />
-      </DetailSection>
-      <DetailSection title="Additional Information">
-        <DetailRow label="Exterior Details" value={listing.exteriorDetails} />
-        <DetailRow label="Interior Details" value={listing.interiorDetails} />
-        <DetailRow label="Additional Features" value={listing.additional} />
-        <DetailRow label="YouTube Link" value={listing.youtubeLink ? 'Available' : null} />
-      </DetailSection>
-    </>
-  );
+  const { user } = useAuth();
+  const [mainImage, setMainImage] = useState(0);
+  const [isInWishlistState, setIsInWishlistState] = useState(false);
+  const [wishlistLoading, setWishlistLoading] = useState(false);
+  const [imageModal, setImageModal] = useState<{ isOpen: boolean; src: string; alt: string }>({
+    isOpen: false,
+    src: '',
+    alt: ''
+  });
 
-  const renderEventDetails = () => (
-    <>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 my-8">
-        {listing.date && <StatCard icon={<CalendarDays size={28} />} label="Event Date" value={format(new Date(listing.date), 'MMM dd, yyyy')} />}
-        {listing.location && <StatCard icon={<MapPin size={28} />} label="Location" value={listing.location} />}
-      </div>
-      <DetailSection title="Event Information">
-        <DetailRow label="Event Date" value={listing.date ? format(new Date(listing.date), 'MMMM dd, yyyy') : null} />
-        <DetailRow label="Location" value={listing.location} />
-        <DetailRow label="Event Type" value={listing.type} />
-      </DetailSection>
-    </>
-  );
+  const images = listing.images || listing.imageUrls || [];
+  const hasImages = images.length > 0;
 
-  const renderRealEstateDetails = () => (
-    <>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 my-8">
-        {listing.beds && <StatCard icon={<BedDouble size={28} />} label="Bedrooms" value={listing.beds} />}
-        {listing.baths && <StatCard icon={<Bath size={28} />} label="Bathrooms" value={listing.baths} />}
-        {listing.hangerIncluded && <StatCard icon={<Building size={28} />} label="Hangar" value="Included" />}
-      </div>
-      <DetailSection title="Property Information">
-        <DetailRow label="Bedrooms" value={listing.beds} />
-        <DetailRow label="Bathrooms" value={listing.baths} />
-        <DetailRow label="Hangar Included" value={listing.hangerIncluded ? 'Yes' : 'No'} />
-      </DetailSection>
-    </>
-  );
+  useEffect(() => {
+    if (user && listing.id) {
+      checkWishlistStatus();
+    }
+  }, [user, listing.id]);
 
-  const renderPlaceDetails = () => (
-    <>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 my-8">
-        {listing.location && <StatCard icon={<MapPin size={28} />} label="Location" value={listing.location} />}
-      </div>
-      <DetailSection title="Place Information">
-        <DetailRow label="Location" value={listing.location} />
-        <DetailRow label="Place Type" value={listing.type} />
-      </DetailSection>
-    </>
-  );
-
-  const renderServiceDetails = () => (
-    <>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 my-8">
-        {listing.location && <StatCard icon={<MapPin size={28} />} label="Service Area" value={listing.location} />}
-        {listing.type && <StatCard icon={<Briefcase size={28} />} label="Service Type" value={listing.type} />}
-      </div>
-      <DetailSection title="Service Information">
-        <DetailRow label="Service Type" value={listing.type} />
-        <DetailRow label="Service Area" value={listing.location} />
-      </DetailSection>
-    </>
-  );
-
-  const renderPartsDetails = () => (
-    <>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 my-8">
-        {listing.manufacturer && <StatCard icon={<Factory size={28} />} label="Manufacturer" value={listing.manufacturer} />}
-        {listing.model && <StatCard icon={<Puzzle size={28} />} label="Model" value={listing.model} />}
-        {listing.year && <StatCard icon={<CalendarDays size={28} />} label="Year" value={listing.year} />}
-      </div>
-      <DetailSection title="Parts Information">
-        <DetailRow label="Manufacturer" value={listing.manufacturer} />
-        <DetailRow label="Model" value={listing.model} />
-        <DetailRow label="Year" value={listing.year} />
-        <DetailRow label="Part Type" value={listing.type} />
-        <DetailRow label="Condition" value={listing.condition} />
-      </DetailSection>
-    </>
-  );
-
-  const renderDetails = () => {
-    switch (listing.category) {
-      case 'Aircraft': return renderAircraftDetails();
-      case 'Events': return renderEventDetails();
-      case 'Real Estate': return renderRealEstateDetails();
-      case 'Places': return renderPlaceDetails();
-      case 'Services': return renderServiceDetails();
-      case 'Parts': return renderPartsDetails();
-      default: return null;
+  const checkWishlistStatus = async () => {
+    if (!user) return;
+    
+    try {
+      const inWishlist = await isInWishlist(listing.id, user.uid);
+      setIsInWishlistState(inWishlist);
+    } catch (error) {
+      console.error('Error checking wishlist status:', error);
     }
   };
 
-  return (
-    <div className="max-w-6xl mx-auto">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground mb-2">{listing.title || 'Untitled Listing'}</h1>
-        <div className="flex items-center gap-4 text-muted-foreground">
-          <div className="flex items-center gap-1">
-            <MapPin size={16} />
-            <span>{listing.location || 'Location not specified'}</span>
+  const handleWishlistToggle = async () => {
+    if (!user) {
+      toast({
+        title: "Login Required",
+        description: "Please log in to save listings to your wishlist.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setWishlistLoading(true);
+    try {
+      if (isInWishlistState) {
+        await removeFromWishlist(listing.id, user.uid);
+        setIsInWishlistState(false);
+        toast({
+          title: "Removed",
+          description: "Listing removed from your wishlist.",
+        });
+      } else {
+        await addToWishlist(listing.id, user.uid, {
+          title: listing.title,
+          price: listing.price,
+          location: listing.location,
+          image: images[0],
+          category: listing.category
+        });
+        setIsInWishlistState(true);
+        toast({
+          title: "Added",
+          description: "Listing added to your wishlist.",
+        });
+      }
+    } catch (error) {
+      console.error('Error toggling wishlist:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update wishlist. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setWishlistLoading(false);
+    }
+  };
+
+  const handleImageClick = (src: string, alt: string) => {
+    setImageModal({ isOpen: true, src, alt });
+  };
+
+  const nextImage = () => {
+    setMainImage((prev) => (prev + 1) % images.length);
+  };
+
+  const prevImage = () => {
+    setMainImage((prev) => (prev - 1 + images.length) % images.length);
+  };
+
+  const formatPrice = (price: number) => {
+    if (price >= 1000000) {
+      return `$${(price / 1000000).toFixed(1)}M`;
+    } else if (price >= 1000) {
+      return `$${(price / 1000).toFixed(0)}K`;
+    } else {
+      return `$${price.toLocaleString()}`;
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      return formatDistanceToNow(date, { addSuffix: true });
+    } catch {
+      return 'Recently';
+    }
+  };
+
+  const renderDetails = () => {
+    const details = [];
+
+    if (listing.year) {
+      details.push({ label: 'Year', value: listing.year });
+    }
+    if (listing.manufacturer) {
+      details.push({ label: 'Manufacturer', value: listing.manufacturer });
+    }
+    if (listing.model) {
+      details.push({ label: 'Model', value: listing.model });
+    }
+    if (listing.totalAirframeTime) {
+      details.push({ label: 'Total Airframe Time', value: `${listing.totalAirframeTime.toLocaleString()} hrs` });
+    }
+    if (listing.engineTimeMin && listing.engineTimeMax) {
+      details.push({ label: 'Engine Time', value: `${listing.engineTimeMin}-${listing.engineTimeMax} hrs` });
+    }
+    if (listing.location) {
+      details.push({ label: 'Location', value: listing.location });
+    }
+    if (listing.category) {
+      details.push({ label: 'Category', value: listing.category });
+    }
+
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {details.map((detail, index) => (
+          <div key={index} className="flex justify-between py-2 border-b">
+            <span className="text-muted-foreground">{detail.label}</span>
+            <span className="font-medium">{detail.value}</span>
           </div>
-          <div className="flex items-center gap-1">
-            <Camera size={16} />
-            <span>{listing.imageUrls?.length || 0} Images</span>
-          </div>
-        </div>
+        ))}
       </div>
+    );
+  };
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Image Gallery */}
-          <div className="grid grid-cols-1 gap-2">
-            <div className="relative aspect-[16/10] w-full overflow-hidden rounded-lg">
-              <Image 
-                src={mainImage} 
-                alt="Main listing image" 
-                fill
-                className="object-cover bg-muted"
-              />
-            </div>
-            <div className="grid grid-cols-5 gap-2">
-              {listing.imageUrls?.map((url: string, index: number) => (
-                <div
-                  key={index}
-                  className={`relative aspect-video w-full cursor-pointer overflow-hidden rounded-md transition-opacity hover:opacity-80 ${mainImage === url ? 'ring-2 ring-primary ring-offset-2' : ''}`}
-                  onClick={() => setMainImage(url)}
-                >
-                  <Image 
-                    src={url} 
-                    alt={`Thumbnail ${index + 1}`} 
+  return (
+    <div className="max-w-7xl mx-auto">
+      {/* Image Gallery */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <div className="lg:col-span-2">
+          <Card>
+            <div className="relative aspect-[4/3] overflow-hidden rounded-t-lg">
+              {hasImages ? (
+                <>
+                  <Image
+                    src={images[mainImage]}
+                    alt={listing.title}
                     fill
-                    className="object-cover bg-muted"
+                    className="object-cover cursor-pointer hover:scale-105 transition-transform duration-300"
+                    onClick={() => handleImageClick(images[mainImage], listing.title)}
                   />
-                </div>
-              ))}
-            </div>
-          </div>
+                  
+                  {/* Navigation Arrows */}
+                  {images.length > 1 && (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white"
+                        onClick={prevImage}
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white"
+                        onClick={nextImage}
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </>
+                  )}
 
-          {/* Actions and Description */}
-          <div className="flex justify-between items-center mt-6 py-4 border-b">
-             <p className="text-sm text-foreground max-w-4xl">{listing.description || '-'}</p>
-             <div className="flex items-center gap-2">
-                <Button variant="outline" size="icon"><Heart /></Button>
-                <Button variant="outline" size="icon"><Share2 /></Button>
-                <Button variant="outline" size="icon"><Bookmark /></Button>
-             </div>
-          </div>
-          
-          {/* Dynamic Details */}
-          {renderDetails()}
+                  {/* Image Counter */}
+                  {images.length > 1 && (
+                    <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
+                      {mainImage + 1} / {images.length}
+                    </div>
+                  )}
+
+                  {/* Zoom Icon */}
+                  <div className="absolute top-4 right-4">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="bg-black/50 hover:bg-black/70 text-white"
+                      onClick={() => handleImageClick(images[mainImage], listing.title)}
+                    >
+                      <ZoomIn className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <div className="flex items-center justify-center bg-gray-100 text-gray-500">
+                  <div className="text-center">
+                    <div className="text-4xl mb-2">📷</div>
+                    <p>No images available</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Thumbnail Gallery */}
+            {images.length > 1 && (
+              <div className="p-4 border-t">
+                <div className="flex gap-2 overflow-x-auto">
+                  {images.map((image: string, index: number) => (
+                    <button
+                      key={index}
+                      onClick={() => setMainImage(index)}
+                      className={`relative w-20 h-16 rounded-lg overflow-hidden border-2 transition-all ${
+                        index === mainImage ? 'border-primary' : 'border-transparent hover:border-gray-300'
+                      }`}
+                    >
+                      <Image
+                        src={image}
+                        alt={`${listing.title} ${index + 1}`}
+                        fill
+                        className="object-cover"
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </Card>
         </div>
 
         {/* Sidebar */}
         <div className="space-y-6">
-          {/* Price and Seller Info */}
-          <div className="bg-card border rounded-lg p-6">
-            <div className="text-center mb-6">
-              <div className="text-3xl font-bold text-foreground mb-2">
-                ${listing.price ? (listing.price / 1000000).toFixed(1) + 'M' : 'Price not specified'}
+          {/* Price and Actions */}
+          <Card>
+            <CardContent className="p-6">
+              <div className="text-center mb-6">
+                <div className="text-4xl font-bold text-primary mb-2">
+                  {formatPrice(listing.price || 0)}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  {listing.category} • {listing.year || 'Year not specified'}
+                </div>
               </div>
-              <div className="text-sm text-muted-foreground">
-                {listing.category} • {listing.year || 'Year not specified'}
-              </div>
-            </div>
 
-            {/* Seller Information */}
-            <div className="border-t pt-6">
+              {/* Action Buttons */}
+              <div className="space-y-3">
+                <MessageButton 
+                  listingId={listing.id}
+                  adOwnerId={listing.userId}
+                  listingData={listing}
+                />
+                
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={handleWishlistToggle}
+                    disabled={wishlistLoading}
+                  >
+                    <Heart className={`h-4 w-4 mr-2 ${isInWishlistState ? 'fill-red-500 text-red-500' : ''}`} />
+                    {isInWishlistState ? 'Saved' : 'Save'}
+                  </Button>
+                  
+                  <ShareButton listing={listing} />
+                </div>
+              </div>
+
+              {/* Listing Stats */}
+              <div className="mt-6 pt-6 border-t">
+                <div className="grid grid-cols-2 gap-4 text-center">
+                  <div>
+                    <div className="text-lg font-semibold">{listing.views || 0}</div>
+                    <div className="text-xs text-muted-foreground">Views</div>
+                  </div>
+                  <div>
+                    <div className="text-lg font-semibold">{listing.shares || 0}</div>
+                    <div className="text-xs text-muted-foreground">Shares</div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Seller Information */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Seller Information</CardTitle>
+            </CardHeader>
+            <CardContent>
               <div className="flex items-center gap-3 mb-4">
                 <Avatar className="h-12 w-12">
-                  <AvatarImage src="https://placehold.co/48x48.png" alt="Seller avatar" />
-                  <AvatarFallback>{getInitials('Joe Seller')}</AvatarFallback>
+                  <AvatarImage src={listing.userAvatar} alt={listing.userName} />
+                  <AvatarFallback>{listing.userName?.charAt(0) || 'U'}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <h3 className="font-semibold text-foreground">Joe Seller</h3>
+                  <h3 className="font-semibold">{listing.userName || 'Unknown Seller'}</h3>
                   <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                    <span>5.0</span>
-                    <span>(145 reviews)</span>
+                    <Star className="h-4 w-4 text-yellow-400 fill-current" />
+                    <span>{listing.averageRating?.toFixed(1) || '5.0'}</span>
+                    <span>({listing.totalRatings || 0} reviews)</span>
                   </div>
                 </div>
               </div>
 
-              {/* Message Button */}
-              <MessageButton 
-                listingId={listing.id}
-                adOwnerId={listing.userId}
-                listingData={listing}
-              />
-            </div>
-          </div>
-
-          {/* Additional Info */}
-          <div className="bg-card border rounded-lg p-6">
-            <h3 className="font-semibold text-foreground mb-4">Listing Information</h3>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Posted</span>
-                <span className="text-foreground">
-                  {listing.createdAt ? format(new Date(listing.createdAt), 'MMM dd, yyyy') : 'Unknown'}
-                </span>
+              <div className="space-y-2">
+                <Button variant="outline" className="w-full justify-start">
+                  <Phone className="h-4 w-4 mr-2" />
+                  Contact Seller
+                </Button>
+                <Button variant="outline" className="w-full justify-start">
+                  <Mail className="h-4 w-4 mr-2" />
+                  Send Email
+                </Button>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Category</span>
-                <span className="text-foreground">{listing.category}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Location</span>
-                <span className="text-foreground">{listing.location}</span>
-              </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
+
+      {/* Main Content */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-6">
+          {/* Title and Basic Info */}
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <h1 className="text-3xl font-bold mb-2">{listing.title}</h1>
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <MapPin className="h-4 w-4" />
+                      <span>{listing.location}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Calendar className="h-4 w-4" />
+                      <span>Posted {formatDate(listing.createdAt)}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Eye className="h-4 w-4" />
+                      <span>{listing.views || 0} views</span>
+                    </div>
+                  </div>
+                </div>
+                <Badge variant="outline" className="text-sm">
+                  {listing.status || 'Active'}
+                </Badge>
+              </div>
+
+              <Separator className="my-4" />
+
+              {/* Description */}
+              <div className="mb-6">
+                <h3 className="font-semibold mb-2">Description</h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  {listing.description || 'No description provided.'}
+                </p>
+              </div>
+
+              {/* Dynamic Details */}
+              <div>
+                <h3 className="font-semibold mb-4">Details</h3>
+                {renderDetails()}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Ratings & Reviews */}
+          <RatingComponent 
+            listingId={listing.id}
+            listingTitle={listing.title}
+          />
+        </div>
+
+        {/* Right Sidebar */}
+        <div className="space-y-6">
+          {/* Quick Actions */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Quick Actions</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Button className="w-full" size="lg">
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Contact Seller
+              </Button>
+              <Button variant="outline" className="w-full">
+                <ExternalLink className="h-4 w-4 mr-2" />
+                View Full Details
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Safety Tips */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Safety Tips</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li>• Always meet in a public place</li>
+                <li>• Verify the seller's identity</li>
+                <li>• Inspect the item thoroughly</li>
+                <li>• Use secure payment methods</li>
+                <li>• Trust your instincts</li>
+              </ul>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Image Modal */}
+      {imageModal.isOpen && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+          <div className="relative max-w-4xl max-h-full">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-4 right-4 z-10 bg-black/50 hover:bg-black/70 text-white"
+              onClick={() => setImageModal({ isOpen: false, src: '', alt: '' })}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+            <Image
+              src={imageModal.src}
+              alt={imageModal.alt}
+              width={800}
+              height={600}
+              className="max-w-full max-h-full object-contain rounded-lg"
+            />
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute bottom-4 right-4 bg-black/50 hover:bg-black/70 text-white"
+              onClick={() => {
+                const link = document.createElement('a');
+                link.href = imageModal.src;
+                link.download = `${listing.title}_image.jpg`;
+                link.click();
+              }}
+            >
+              <Download className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

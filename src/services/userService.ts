@@ -1,7 +1,7 @@
 'use server';
 
 import { db, isFirebaseConfigured } from '@/lib/firebase';
-import { doc, setDoc, getDoc, serverTimestamp, collection, query, where, getDocs, limit } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp, collection, query, where, getDocs, limit, updateDoc } from 'firebase/firestore';
 
 export interface UserProfileData {
   uid: string;
@@ -69,5 +69,146 @@ export async function createUserProfile(userData: UserProfileData): Promise<void
     // To avoid failing the entire sign-up process, we can just log the error.
     // For a production app, you might want more robust error handling or retry logic.
     throw new Error('Failed to create user profile in Firestore.');
+  }
+}
+
+export interface UserProfileData {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  photoURL: string | null;
+  emailVerified: boolean;
+  phone?: string;
+  bio?: string;
+  location?: string;
+  website?: string;
+  company?: string;
+  jobTitle?: string;
+  experience?: string;
+  specialties?: string;
+  createdAt?: string;
+  lastLogin?: string;
+  listingsCount?: number;
+  totalViews?: number;
+  averageRating?: number;
+}
+
+/**
+ * Updates user profile data in Firestore
+ */
+export async function updateProfile(userId: string, profileData: {
+  displayName?: string;
+  email?: string;
+  phone?: string;
+  bio?: string;
+  location?: string;
+  website?: string;
+  company?: string;
+  jobTitle?: string;
+  experience?: string;
+  specialties?: string;
+}): Promise<boolean> {
+  try {
+    if (!isFirebaseConfigured || !db) {
+      console.error('Firebase not configured');
+      return false;
+    }
+
+    const userRef = doc(db, 'users', userId);
+    const updateData = {
+      ...profileData,
+      updatedAt: serverTimestamp(),
+    };
+
+    await setDoc(userRef, updateData, { merge: true });
+    console.log('Profile updated successfully');
+    return true;
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    return false;
+  }
+}
+
+/**
+ * Gets user profile data from Firestore
+ */
+export async function getUserProfile(userId: string): Promise<UserProfileData | null> {
+  try {
+    if (!isFirebaseConfigured || !db) {
+      console.error('Firebase not configured');
+      return null;
+    }
+
+    const userRef = doc(db, 'users', userId);
+    const userSnap = await getDoc(userRef);
+
+    if (userSnap.exists()) {
+      const userData = userSnap.data();
+      
+      // Get additional stats
+      const listingsQuery = query(
+        collection(db, 'listings'),
+        where('userId', '==', userId)
+      );
+      const listingsSnapshot = await getDocs(listingsQuery);
+      const listings = listingsSnapshot.docs.map(doc => doc.data());
+      
+      const totalViews = listings.reduce((sum, listing) => sum + (listing.views || 0), 0);
+      const averageRating = listings.reduce((sum, listing) => sum + (listing.averageRating || 0), 0) / listings.length || 0;
+
+      return {
+        uid: userId,
+        email: userData.email || null,
+        displayName: userData.displayName || null,
+        photoURL: userData.photoURL || null,
+        emailVerified: userData.emailVerified || false,
+        phone: userData.phone || '',
+        bio: userData.bio || '',
+        location: userData.location || '',
+        website: userData.website || '',
+        company: userData.company || '',
+        jobTitle: userData.jobTitle || '',
+        experience: userData.experience || '',
+        specialties: userData.specialties || '',
+        createdAt: userData.createdAt?.toDate?.()?.toISOString() || userData.createdAt,
+        lastLogin: userData.lastLogin?.toDate?.()?.toISOString() || userData.lastLogin,
+        listingsCount: listings.length,
+        totalViews,
+        averageRating: isNaN(averageRating) ? 0 : averageRating,
+      };
+    } else {
+      // Create user profile if it doesn't exist
+      const newUserData = {
+        uid: userId,
+        email: null,
+        displayName: null,
+        photoURL: null,
+        emailVerified: false,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      };
+      
+      await setDoc(doc(db, 'users', userId), newUserData);
+      return newUserData as UserProfileData;
+    }
+  } catch (error) {
+    console.error('Error getting user profile:', error);
+    return null;
+  }
+}
+
+/**
+ * Updates user's last login timestamp
+ */
+export async function updateLastLogin(userId: string): Promise<void> {
+  try {
+    if (!isFirebaseConfigured || !db) return;
+
+    const userRef = doc(db, 'users', userId);
+    await updateDoc(userRef, {
+      lastLogin: serverTimestamp(),
+    });
+  } catch (error) {
+    console.error('Error updating last login:', error);
   }
 }

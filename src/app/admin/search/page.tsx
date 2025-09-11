@@ -304,7 +304,7 @@ export default function SearchPage() {
       <Card>
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-xl">Watchlists</CardTitle>
+            <CardTitle className="text-xl">Wishlist</CardTitle>
             <Button variant="ghost" size="sm" className="text-blue-600">
               See All
             </Button>

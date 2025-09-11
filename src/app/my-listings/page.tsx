@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -26,45 +25,41 @@ function formatListingData(listing: DocumentData) {
     id: listing.id || '',
     category: listing.category || 'Unknown',
     price: listing.price || 0,
-    imageUrl: listing.imageUrls?.[0] || `https://placehold.co/600x450.png`,
+    images: listing.imageUrls || listing.images || [], // Support both imageUrls and images
     location: listing.location || 'Unknown Location',
-    postedDate,
-    // Placeholders for data not available in the listing document
-    rating: 5.0, // Placeholder
-    ratingCount: 145, // Placeholder
+    createdAt: listing.createdAt || new Date().toISOString(),
+    status: listing.status || 'active',
+    // Aircraft specific fields
+    year: listing.year,
+    manufacturer: listing.manufacturer,
+    model: listing.model,
+    totalAirframeTime: listing.totalAirframeTime,
+    engineTimeMin: listing.engineTimeMin,
+    engineTimeMax: listing.engineTimeMax,
   };
 
   let title = '';
-  let imageHint = '';
 
   if (listing.category === 'Aircraft') {
       title = `${listing.year || 'Unknown'} ${listing.manufacturer || 'Unknown'} ${listing.model || 'Unknown'}`;
-      imageHint = `${listing.manufacturer || 'Unknown'} ${listing.model || 'Unknown'}`;
   } else if (listing.category === 'Events') {
       title = listing.title || 'Event Listing';
-      imageHint = 'event concert';
   } else if (listing.category === 'Real Estate') {
       title = listing.title || 'Real Estate Listing';
-      imageHint = 'real estate house';
   } else if (listing.category === 'Places') {
       title = listing.title || 'Place Listing';
-      imageHint = 'travel destination';
   } else if (listing.category === 'Services') {
       title = listing.title || 'Service Listing';
-      imageHint = 'professional service';
   } else {
     // Default for Parts and other categories
     title = listing.title || `${listing.manufacturer || 'Unknown'} Part`;
-    imageHint = `${listing.manufacturer || 'Unknown'} part`;
   }
 
   return {
     ...formattedData,
     title,
-    imageHint,
   };
 }
-
 
 export default function MyListingsPage() {
     const { user, loading: authLoading } = useAuth();
@@ -138,7 +133,6 @@ export default function MyListingsPage() {
                                     key={listing.id} 
                                     listing={listing} 
                                     onDelete={handleDelete}
-                                    isDeleting={deletingId === listing.id}
                                 />
                             ))}
                         </div>

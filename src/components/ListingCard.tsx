@@ -1,17 +1,16 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from 'react';
-import Image from 'next/image';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
-import { Heart, Share2, Star, MapPin } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+import { Heart, Eye, Share2, Star } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { addToWishlist, removeFromWishlist, isInWishlist } from '@/services/wishlistService';
 import { toast } from '@/hooks/use-toast';
+import { formatDistanceToNow } from 'date-fns';
 
 interface ListingCardProps {
   listing: {
@@ -21,129 +20,92 @@ interface ListingCardProps {
     imageUrl: string;
     imageHint: string;
     location: string;
-    postedDate: string; // ISO string
+    postedDate: string;
     userName: string;
     userAvatarUrl: string;
     rating: number;
     ratingCount: number;
-    // Additional fields for wishlist functionality
-    manufacturer?: string;
-    model?: string;
-    year?: number;
+    views: number;
+    shares: number;
     category?: string;
     imageUrls?: string[];
+    images?: string[];
   };
 }
 
 export function ListingCard({ listing }: ListingCardProps) {
   const { user } = useAuth();
-  const [isWishlisted, setIsWishlisted] = useState(false);
+  const [isInWishlistState, setIsInWishlistState] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  
-  // Check if item is in wishlist on component mount
+
   useEffect(() => {
-    const checkWishlistStatus = async () => {
-      if (user) {
-        try {
-          const inWishlist = await isInWishlist(user.uid, listing.id);
-          setIsWishlisted(inWishlist);
-        } catch (error) {
-          console.error('Error checking wishlist status:', error);
-        }
-      }
-    };
-    
-    checkWishlistStatus();
+    if (user && listing.id) {
+      checkWishlistStatus();
+    }
   }, [user, listing.id]);
-  
+
+  const checkWishlistStatus = async () => {
+    if (!user) return;
+    
+    try {
+      const inWishlist = await isInWishlist(listing.id, user.uid);
+      setIsInWishlistState(inWishlist);
+    } catch (error) {
+      console.error('Error checking wishlist status:', error);
+    }
+  };
+
   const handleWishlistClick = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     e.preventDefault();
-    
+
     if (!user) {
       toast({
         title: "Login Required",
-        description: "Please log in to add items to your wishlist.",
+        description: "Please log in to save listings to your wishlist.",
         variant: "destructive",
       });
       return;
     }
-    
+
     setIsLoading(true);
-    
     try {
-      if (isWishlisted) {
-        // Remove from wishlist
-        const success = await removeFromWishlist(user.uid, listing.id);
-        if (success) {
-          setIsWishlisted(false);
-          toast({
-            title: "Removed from Wishlist",
-            description: `${listing.title} has been removed from your wishlist.`,
-          });
-        } else {
-          toast({
-            title: "Error",
-            description: "Failed to remove item from wishlist.",
-            variant: "destructive",
-          });
-        }
+      if (isInWishlistState) {
+        await removeFromWishlist(listing.id, user.uid);
+        setIsInWishlistState(false);
+        toast({
+          title: "Removed",
+          description: "Listing removed from your wishlist.",
+        });
       } else {
-        // Add to wishlist
-        const success = await addToWishlist(user.uid, listing);
-        if (success) {
-          setIsWishlisted(true);
-          toast({
-            title: "Added to Wishlist",
-            description: `${listing.title} has been added to your wishlist.`,
-          });
-        } else {
-          toast({
-            title: "Already in Wishlist",
-            description: "This item is already in your wishlist.",
-            variant: "destructive",
-          });
-        }
+        await addToWishlist(listing.id, user.uid, {
+          title: listing.title,
+          price: listing.price,
+          location: listing.location,
+          image: listing.imageUrl,
+          category: listing.category
+        });
+        setIsInWishlistState(true);
+        toast({
+          title: "Added",
+          description: "Listing added to your wishlist.",
+        });
       }
     } catch (error) {
-      console.error('Error handling wishlist:', error);
+      console.error('Error toggling wishlist:', error);
       toast({
         title: "Error",
-        description: "Something went wrong. Please try again.",
+        description: "Failed to update wishlist. Please try again.",
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
     }
   };
-  
+
   const handleShareClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     e.preventDefault();
-    
-    // Copy listing URL to clipboard
-    const listingUrl = `${window.location.origin}/listing/${listing.id}`;
-    
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(listingUrl).then(() => {
-        toast({
-          title: "Link Copied",
-          description: "Listing link has been copied to clipboard.",
-        });
-      }).catch(() => {
-        // Fallback for older browsers
-        const textArea = document.createElement('textarea');
-        textArea.value = listingUrl;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textArea);
-        toast({
-          title: "Link Copied",
-          description: "Listing link has been copied to clipboard.",
-        });
-      });
-    }
   };
   
   const formattedDate = listing.postedDate 
@@ -157,74 +119,98 @@ export function ListingCard({ listing }: ListingCardProps) {
       })()
     : 'N/A';
 
+  const formatPrice = (price: number) => {
+    if (price >= 1000000) {
+      return `$${(price / 1000000).toFixed(1)}M`;
+    } else if (price >= 1000) {
+      return `$${(price / 1000).toFixed(0)}K`;
+    } else {
+      return `$${price.toLocaleString()}`;
+    }
+  };
+
   return (
     <Link href={`/listing/${listing.id}`} className="block">
-      <Card className="overflow-hidden transition-shadow duration-300 hover:shadow-xl rounded-0 border group">
-        <div className="relative">
-          <div className="aspect-[4/3] relative">
-            <Image
-              src={listing.imageUrl}
-              alt={listing.title}
-              fill
-              className="object-cover bg-muted"
-              data-ai-hint={listing.imageHint}
-            />
+      <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+        <div className="relative aspect-[4/3] overflow-hidden">
+          <Image
+            src={listing.imageUrl}
+            alt={listing.title}
+            fill
+            className="object-cover group-hover:scale-105 transition-transform duration-300"
+            data-ai-hint={listing.imageHint}
+          />
+          
+          {/* Status Badge */}
+          <div className="absolute top-3 left-3">
+            <Badge className="bg-green-100 text-green-800 border-green-200">
+              Active
+            </Badge>
           </div>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className={`absolute top-3 right-3 rounded-full h-9 w-9 transition-colors ${
-              isWishlisted 
-                ? 'bg-red-500 hover:bg-red-600 text-white' 
-                : 'bg-black/30 hover:bg-black/50 text-white'
-            }`}
-            onClick={handleWishlistClick}
-            disabled={isLoading}
-          >
-            <Heart className={`h-5 w-5 ${isWishlisted ? 'fill-current' : ''}`} />
-          </Button>
-        </div>
-        <div className="p-4 space-y-3 bg-card">
-          <div className="flex justify-between items-start">
-            <h3 className="font-bold text-xl truncate">{listing.title}</h3>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="text-muted-foreground -mr-2 -mt-1 hover:text-primary" 
-              onClick={handleShareClick}
+
+          {/* Views Count */}
+          <div className="absolute bottom-3 left-3 flex items-center gap-1 bg-black/50 text-white px-2 py-1 rounded-full text-xs">
+            <Eye className="h-3 w-3" />
+            <span>{listing.views}</span>
+          </div>
+
+          {/* Wishlist Button */}
+          <div className="absolute top-3 right-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="bg-black/30 hover:bg-black/50 text-white rounded-full h-8 w-8"
+              onClick={handleWishlistClick}
+              disabled={isLoading}
             >
-              <Share2 className="h-5 w-5" />
+              <Heart 
+                className={`h-4 w-4 ${isInWishlistState ? 'fill-red-500 text-red-500' : ''}`} 
+              />
             </Button>
           </div>
-          <div className="flex justify-between items-center">
-            <p className="text-0 font-bold text-primary">
-              ${Number(listing.price).toLocaleString('en-US', {
-                minimumFractionDigits: 2, 
-                maximumFractionDigits: 2
-              })}
-            </p>
-            <div className="flex items-center gap-1.5">
-              <Star className="text-primary fill-primary h-5 w-5" />
-              <span className="font-bold">{listing.rating.toFixed(1)}</span>
-              <span className="text-muted-foreground">({listing.ratingCount})</span>
+        </div>
+
+        <div className="p-4">
+          <h3 className="font-semibold text-lg mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
+            {listing.title}
+          </h3>
+          
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-2xl font-bold text-green-600">
+              {formatPrice(listing.price)}
+            </span>
+            
+            <div className="flex items-center gap-1">
+              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+              <span className="text-sm font-medium">
+                {listing.rating.toFixed(1)} ({listing.ratingCount})
+              </span>
             </div>
           </div>
-          <Separator />
-          <div className="flex items-center gap-3">
-            <Avatar className="h-10 w-10">
-              <AvatarImage src={listing.userAvatarUrl} alt={listing.userName} data-ai-hint="man portrait"/>
-              <AvatarFallback>{listing.userName.charAt(0)}</AvatarFallback>
-            </Avatar>
-            <div className="flex-grow min-w-0">
-              <p className="font-bold truncate">{listing.userName}</p>
-              <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                <MapPin className="h-4 w-4 flex-shrink-0" />
-                <span className="truncate">{listing.location}</span>
+
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center text-xs font-semibold text-blue-600">
+                {listing.userName.charAt(0)}
+              </div>
+              <span className="truncate">{listing.userName}</span>
+            </div>
+            
+            <div className="flex items-center justify-between text-sm text-gray-500">
+              <span className="truncate">{listing.location}</span>
+              <span>{formattedDate}</span>
+            </div>
+            
+            <div className="flex items-center gap-4 text-xs text-gray-400">
+              <div className="flex items-center gap-1">
+                <Eye className="h-3 w-3" />
+                <span>{listing.views}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Share2 className="h-3 w-3" />
+                <span>{listing.shares}</span>
               </div>
             </div>
-            <span className="text-sm text-muted-foreground self-end flex-shrink-0 whitespace-nowrap">
-              {formattedDate}
-            </span>
           </div>
         </div>
       </Card>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,11 +18,13 @@ import {
   MoreVertical,
   ArrowRight,
   Clock,
-  CheckCircle
+  CheckCircle,
+  Loader2
 } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { getUserConversations, getUnreadMessageCount, type Conversation } from '@/services/messagingService';
+import { getUserConversations, getUnreadMessageCount, listenToUserConversations, listenToUnreadCount, type Conversation } from '@/services/messagingService';
+import type { Unsubscribe } from 'firebase/firestore';
 
 export function ChatDropdown() {
   const { user } = useAuth();
@@ -30,39 +32,45 @@ export function ChatDropdown() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
+  
+  // Refs for cleanup
+  const conversationsUnsubscribeRef = useRef<Unsubscribe | null>(null);
+  const unreadUnsubscribeRef = useRef<Unsubscribe | null>(null);
 
   useEffect(() => {
     if (user) {
-      loadRecentConversations();
-      loadUnreadCount();
+      // Set up real-time listener for conversations
+      const conversationsUnsubscribe = listenToUserConversations(user.uid, (data) => {
+        setConversations(data.slice(0, 5)); // Get only the 5 most recent conversations
+        setLoading(false);
+      });
+      
+      // Set up real-time listener for unread count
+      const unreadUnsubscribe = listenToUnreadCount(user.uid, (count) => {
+        setUnreadCount(count);
+      });
+      
+      conversationsUnsubscribeRef.current = conversationsUnsubscribe;
+      unreadUnsubscribeRef.current = unreadUnsubscribe;
+      
+      return () => {
+        if (conversationsUnsubscribe) conversationsUnsubscribe();
+        if (unreadUnsubscribe) unreadUnsubscribe();
+      };
     }
   }, [user]);
 
-  const loadRecentConversations = async () => {
-    if (!user) return;
-    
-    setLoading(true);
-    try {
-      const data = await getUserConversations(user.uid);
-      // Get only the 5 most recent conversations
-      setConversations(data.slice(0, 5));
-    } catch (error) {
-      console.error('Error loading conversations:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadUnreadCount = async () => {
-    if (!user) return;
-    
-    try {
-      const count = await getUnreadMessageCount(user.uid);
-      setUnreadCount(count);
-    } catch (error) {
-      console.error('Error loading unread count:', error);
-    }
-  };
+  // Cleanup listeners on unmount
+  useEffect(() => {
+    return () => {
+      if (conversationsUnsubscribeRef.current) {
+        conversationsUnsubscribeRef.current();
+      }
+      if (unreadUnsubscribeRef.current) {
+        unreadUnsubscribeRef.current();
+      }
+    };
+  }, []);
 
   const handleConversationClick = (conversationId: string) => {
     router.push(`/messages?conversation=${conversationId}`);
@@ -116,7 +124,7 @@ export function ChatDropdown() {
         <div className="max-h-64 overflow-y-auto">
           {loading ? (
             <div className="flex items-center justify-center py-4">
-              <div className="text-sm text-gray-500">Loading...</div>
+              <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
             </div>
           ) : conversations.length === 0 ? (
             <div className="flex items-center justify-center py-4">

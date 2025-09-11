@@ -1,5 +1,6 @@
 import { getListingById } from '@/services/listingService';
 import { ListingDetailView } from '@/components/ListingDetailView';
+import { SimilarListings } from '@/components/SimilarListings';
 import { notFound } from 'next/navigation';
 import { Header } from '@/components/Header';
 
@@ -19,6 +20,14 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
       <Header />
       <main className="container mx-auto px-4 py-8">
         <ListingDetailView listing={listing} />
+        
+        {/* Similar Listings */}
+        <div className="mt-12">
+          <SimilarListings 
+            listingId={listing.id}
+            category={listing.category}
+          />
+        </div>
       </main>
     </div>
   );

@@ -1,6 +1,6 @@
 import { Header } from '@/components/Header';
 import { ListingCard } from '@/components/ListingCard';
-import { getListings, type SearchFilters } from '@/services/listingService';
+import { getListingsWithRatings, type SearchFilters } from '@/services/listingService';
 import type { DocumentData } from 'firebase/firestore';
 import { FilterSort } from '@/components/FilterSort';
 import { Suspense } from 'react';
@@ -10,7 +10,7 @@ import { ChevronRight, X } from 'lucide-react';
 import { ListingListItem } from '@/components/ListingListItem';
 import { SponsoredAdCard } from '@/components/SponsoredAdCard';
 import { safeTimestampToISO } from '@/lib/utils';
-
+import ConditionalHeader from '@/components/ConditionalHeader';
 
 function formatListingData(listing: DocumentData) {
   // Safely convert timestamp with null checks
@@ -22,12 +22,20 @@ function formatListingData(listing: DocumentData) {
     imageUrl: listing.imageUrls?.[0] || `https://placehold.co/600x450.png`,
     location: listing.location || 'Unknown Location',
     postedDate: postDateStr,
-    userName: 'Joseph Andrew', // Placeholder
-    userAvatarUrl: 'https://placehold.co/40x40.png', // Placeholder
-    rating: 5.0, // Placeholder
-    ratingCount: 145, // Placeholder
+    userName: listing.userName || 'Unknown User',
+    userAvatarUrl: listing.userAvatarUrl || 'https://placehold.co/40x40.png',
+    rating: listing.averageRating,
+    ratingCount: listing.ratingCount,
+    views: listing.views || 0,
+    shares: listing.shares || 0,
     description: listing.description || 'No description provided.',
     imageCount: listing.imageUrls?.length || 0,
+    // Additional fields for wishlist functionality
+    manufacturer: listing.manufacturer,
+    model: listing.model,
+    year: listing.year,
+    category: listing.category,
+    imageUrls: listing.imageUrls,
   };
 
   let title = '';
@@ -61,7 +69,6 @@ function formatListingData(listing: DocumentData) {
   };
 }
 
-
 const getFilterTags = (filters: SearchFilters) => {
     const tags: { key: string, label: string, href: string }[] = [];
     
@@ -93,9 +100,8 @@ const getFilterTags = (filters: SearchFilters) => {
     return tags;
 }
 
-
 async function Listings({ filters }: { filters: SearchFilters }) {
-  const listingsData = await getListings(filters);
+  const listingsData = await getListingsWithRatings(filters);
   const listings = JSON.parse(JSON.stringify(listingsData));
   
   // Client-side filtering for ranges Firestore doesn't support in a single query
@@ -194,25 +200,26 @@ async function Listings({ filters }: { filters: SearchFilters }) {
   );
 }
 
-
-export default function HomePage({ searchParams }: { searchParams?: SearchFilters }) {
+export default async function HomePage({ searchParams }: { searchParams?: Promise<SearchFilters> }) {
+  const resolvedSearchParams = await searchParams;
+  
   const filters: SearchFilters = {
-    category: searchParams?.category,
-    searchTerm: searchParams?.searchTerm,
-    type: searchParams?.type,
-    yearMin: searchParams?.yearMin ? Number(searchParams.yearMin) : undefined,
-    yearMax: searchParams?.yearMax ? Number(searchParams.yearMax) : undefined,
-    manufacturer: searchParams?.manufacturer,
-    model: searchParams?.model,
-    airframeHrMin: searchParams?.airframeHrMin ? Number(searchParams.airframeHrMin) : undefined,
-    airframeHrMax: searchParams?.airframeHrMax ? Number(searchParams.airframeHrMax) : undefined,
-    engineHrMin: searchParams?.engineHrMin ? Number(searchParams.engineHrMin) : undefined,
-    engineHrMax: searchParams?.engineHrMax ? Number(searchParams.engineHrMax) : undefined,
+    category: resolvedSearchParams?.category,
+    searchTerm: resolvedSearchParams?.searchTerm,
+    type: resolvedSearchParams?.type,
+    yearMin: resolvedSearchParams?.yearMin ? Number(resolvedSearchParams.yearMin) : undefined,
+    yearMax: resolvedSearchParams?.yearMax ? Number(resolvedSearchParams.yearMax) : undefined,
+    manufacturer: resolvedSearchParams?.manufacturer,
+    model: resolvedSearchParams?.model,
+    airframeHrMin: resolvedSearchParams?.airframeHrMin ? Number(resolvedSearchParams.airframeHrMin) : undefined,
+    airframeHrMax: resolvedSearchParams?.airframeHrMax ? Number(resolvedSearchParams.airframeHrMax) : undefined,
+    engineHrMin: resolvedSearchParams?.engineHrMin ? Number(resolvedSearchParams.engineHrMin) : undefined,
+    engineHrMax: resolvedSearchParams?.engineHrMax ? Number(resolvedSearchParams.engineHrMax) : undefined,
   };
 
   return (
       <div className="flex flex-col min-h-screen">
-        <Header />
+        <ConditionalHeader />
         <main className="flex-grow container mx-auto px-4 py-8">
             <Suspense fallback={<div className="text-center p-12">Loading listings...</div>}>
                 <Listings filters={filters} />

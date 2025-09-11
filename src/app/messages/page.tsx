@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSearchParams } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -13,24 +12,30 @@ import {
   Star,
   MoreVertical,
   Send,
-  Smile,
-  Paperclip,
   ArrowLeft,
-  CheckCircle,
-  Clock,
   Loader2,
-  Menu
+  Archive,
+  Trash2,
+  X
 } from 'lucide-react';
 import Image from 'next/image';
 import { toast } from '@/hooks/use-toast';
 import { 
-  getUserConversations, 
-  getConversationMessages, 
-  sendMessage, 
+  listenToUserConversations,
+  listenToConversationMessages,
+  sendMessage,
   markMessagesAsRead,
+  getUserInfoFromAuth,
+  toggleStarConversation,
+  toggleArchiveConversation,
+  deleteConversation,
   type Conversation,
-  type Message 
+  type Message
 } from '@/services/messagingService';
+import { EmojiPicker } from '@/components/EmojiPicker';
+import { ImageUpload } from '@/components/ImageUpload';
+import { ImageModal } from '@/components/ImageModal';
+import type { Unsubscribe } from 'firebase/firestore';
 
 export default function MessagesPage() {
   const { user } = useAuth();
@@ -43,13 +48,39 @@ export default function MessagesPage() {
   const [sendingMessage, setSendingMessage] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [showMobileChat, setShowMobileChat] = useState(false);
-
-  // Get conversation ID from URL params
+  const [messagesLoading, setMessagesLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<'all' | 'unread' | 'favorites'>('all');
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [clearImagePreview, setClearImagePreview] = useState(false);
+  const [imageModal, setImageModal] = useState<{ isOpen: boolean; url: string; name?: string }>({
+    isOpen: false,
+    url: '',
+    name: ''
+  });
+  
+  const messagesUnsubscribeRef = useRef<Unsubscribe | null>(null);
+  const conversationsUnsubscribeRef = useRef<Unsubscribe | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const conversationId = searchParams.get('conversation');
 
   useEffect(() => {
     if (user) {
-      loadConversations();
+      const unsubscribe = listenToUserConversations(user.uid, (data) => {
+        setConversations(data);
+        setLoading(false);
+        
+        if (!selectedConversation && data.length > 0) {
+          setSelectedConversation(data[0]);
+          loadMessages(data[0].id);
+        }
+      });
+      
+      conversationsUnsubscribeRef.current = unsubscribe;
+      
+      return () => {
+        if (unsubscribe) unsubscribe();
+      };
     }
   }, [user]);
 
@@ -64,65 +95,96 @@ export default function MessagesPage() {
     }
   }, [conversationId, conversations]);
 
-  const loadConversations = async () => {
-    if (!user) return;
-    
-    setLoading(true);
-    try {
-      const data = await getUserConversations(user.uid);
-      setConversations(data);
-      
-      // If no conversation is selected and we have conversations, select the first one
-      if (!selectedConversation && data.length > 0) {
-        setSelectedConversation(data[0]);
-        loadMessages(data[0].id);
+  useEffect(() => {
+    return () => {
+      if (messagesUnsubscribeRef.current) {
+        messagesUnsubscribeRef.current();
       }
-    } catch (error) {
-      console.error('Error loading conversations:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load conversations.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
+      if (conversationsUnsubscribeRef.current) {
+        conversationsUnsubscribeRef.current();
+      }
+    };
+  }, []);
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const scrollToBottom = () => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   };
 
   const loadMessages = async (convId: string) => {
+    setMessagesLoading(true);
+    
+    if (messagesUnsubscribeRef.current) {
+      messagesUnsubscribeRef.current();
+    }
+    
     try {
-      const data = await getConversationMessages(convId);
-      setMessages(data);
+      const unsubscribe = listenToConversationMessages(convId, (data) => {
+        setMessages(data);
+        setMessagesLoading(false);
+        
+        if (user) {
+          markMessagesAsRead(convId, user.uid);
+        }
+      });
       
-      // Mark messages as read
-      if (user) {
-        await markMessagesAsRead(convId, user.uid);
-      }
+      messagesUnsubscribeRef.current = unsubscribe;
     } catch (error) {
       console.error('Error loading messages:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load messages.",
+        variant: "destructive",
+      });
+      setMessagesLoading(false);
     }
   };
 
   const handleSendMessage = async () => {
-    if (!newMessage.trim() || !selectedConversation || !user) return;
+    if ((!newMessage.trim() && !selectedImage) || !selectedConversation || !user) return;
 
     setSendingMessage(true);
     try {
+      const userInfo = getUserInfoFromAuth(user);
+      
+      let attachment = undefined;
+      if (selectedImage) {
+        attachment = {
+          type: 'image' as const,
+          url: URL.createObjectURL(selectedImage),
+          filename: selectedImage.name,
+        };
+      }
+      
       const success = await sendMessage(
         selectedConversation.id,
         user.uid,
         selectedConversation.adOwnerId === user.uid ? selectedConversation.customerId : selectedConversation.adOwnerId,
-        newMessage.trim(),
-        user.displayName || 'Unknown User',
-        user.photoURL
+        newMessage.trim() || (attachment ? '📎 Image' : ''),
+        userInfo.name,
+        userInfo.avatar,
+        attachment
       );
 
       if (success) {
         setNewMessage('');
-        // Reload messages
-        loadMessages(selectedConversation.id);
-        // Reload conversations to update last message
-        loadConversations();
+        setSelectedImage(null);
+        setImagePreview(null);
+        setClearImagePreview(true);
+        
+        if (attachment && attachment.url.startsWith('blob:')) {
+          URL.revokeObjectURL(attachment.url);
+        }
+        
+        setTimeout(() => {
+          setClearImagePreview(false);
+        }, 100);
       } else {
         toast({
           title: "Error",
@@ -149,11 +211,111 @@ export default function MessagesPage() {
     }
   };
 
-  const filteredConversations = conversations.filter(conv =>
-    conv.adOwnerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    conv.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    conv.listingTitle?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleEmojiSelect = (emoji: string) => {
+    setNewMessage(prev => prev + emoji);
+  };
+
+  const handleImageSelect = (file: File) => {
+    setSelectedImage(file);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setImagePreview(e.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleImageClick = (url: string, name?: string) => {
+    setImageModal({
+      isOpen: true,
+      url,
+      name
+    });
+  };
+
+  const handleRemoveImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+    setClearImagePreview(true);
+    
+    setTimeout(() => {
+      setClearImagePreview(false);
+    }, 100);
+  };
+
+  const handleStarConversation = async () => {
+    if (!selectedConversation) return;
+    
+    try {
+      const success = await toggleStarConversation(selectedConversation.id, selectedConversation.isStarred || false);
+      if (success) {
+        toast({
+          title: selectedConversation.isStarred ? "Unstarred" : "Starred",
+          description: `Conversation ${selectedConversation.isStarred ? 'removed from' : 'added to'} favorites.`,
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update conversation.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleArchiveConversation = async () => {
+    if (!selectedConversation) return;
+    
+    try {
+      const success = await toggleArchiveConversation(selectedConversation.id, selectedConversation.isArchived || false);
+      if (success) {
+        toast({
+          title: selectedConversation.isArchived ? "Unarchived" : "Archived",
+          description: `Conversation ${selectedConversation.isArchived ? 'removed from' : 'moved to'} archive.`,
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update conversation.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteConversation = async () => {
+    if (!selectedConversation) return;
+    
+    try {
+      const success = await deleteConversation(selectedConversation.id);
+      if (success) {
+        toast({
+          title: "Deleted",
+          description: "Conversation has been permanently deleted.",
+        });
+        setSelectedConversation(null);
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete conversation.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const filteredConversations = conversations.filter(conv => {
+    const matchesSearch = (conv.adOwnerName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (conv.customerName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (conv.listingTitle || '').toLowerCase().includes(searchTerm.toLowerCase());
+    
+    if (activeTab === 'unread') {
+      return matchesSearch && conv.unreadCount > 0;
+    } else if (activeTab === 'favorites') {
+      return matchesSearch && conv.isStarred;
+    }
+    
+    return matchesSearch && !conv.isArchived;
+  });
 
   const handleConversationSelect = (conversation: Conversation) => {
     setSelectedConversation(conversation);
@@ -170,9 +332,9 @@ export default function MessagesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto h-screen flex">
-        {/* Conversations List - Hidden on mobile when chat is open */}
+    <div className="h-screen bg-gray-50 overflow-hidden">
+      <div className="max-w-7xl mx-auto h-full flex">
+        {/* Conversations List */}
         <div className={`w-full lg:w-1/3 border-r bg-white flex flex-col ${showMobileChat ? 'hidden lg:flex' : 'flex'}`}>
           {/* Mobile Header */}
           <div className="lg:hidden p-4 border-b bg-white flex items-center justify-between">
@@ -207,9 +369,30 @@ export default function MessagesPage() {
             
             {/* Filter Tabs */}
             <div className="flex space-x-1">
-              <Button variant="default" size="sm" className="flex-1">All</Button>
-              <Button variant="outline" size="sm" className="flex-1">Unread</Button>
-              <Button variant="outline" size="sm" className="flex-1">Favorites</Button>
+              <Button 
+                variant={activeTab === 'all' ? 'default' : 'outline'} 
+                size="sm" 
+                className="flex-1"
+                onClick={() => setActiveTab('all')}
+              >
+                All
+              </Button>
+              <Button 
+                variant={activeTab === 'unread' ? 'default' : 'outline'} 
+                size="sm" 
+                className="flex-1"
+                onClick={() => setActiveTab('unread')}
+              >
+                Unread
+              </Button>
+              <Button 
+                variant={activeTab === 'favorites' ? 'default' : 'outline'} 
+                size="sm" 
+                className="flex-1"
+                onClick={() => setActiveTab('favorites')}
+              >
+                Favorites
+              </Button>
             </div>
             
             {/* Search */}
@@ -253,6 +436,9 @@ export default function MessagesPage() {
                           {conversation.unreadCount}
                         </Badge>
                       )}
+                      {conversation.isStarred && (
+                        <Star className="absolute -bottom-1 -right-1 h-4 w-4 text-yellow-500 fill-yellow-500" />
+                      )}
                     </div>
                     
                     <div className="flex-1 min-w-0">
@@ -289,7 +475,7 @@ export default function MessagesPage() {
           </div>
         </div>
 
-        {/* Chat Area - Hidden on mobile when conversations list is shown */}
+        {/* Chat Area */}
         <div className={`flex-1 flex flex-col ${showMobileChat ? 'flex' : 'hidden lg:flex'}`}>
           {selectedConversation ? (
             <>
@@ -319,8 +505,13 @@ export default function MessagesPage() {
                 </div>
                 
                 <div className="flex items-center space-x-2">
-                  <Button variant="ghost" size="icon">
-                    <Star className="h-4 w-4" />
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    onClick={handleStarConversation}
+                    className={selectedConversation.isStarred ? 'text-yellow-500' : ''}
+                  >
+                    <Star className={`h-4 w-4 ${selectedConversation.isStarred ? 'fill-current' : ''}`} />
                   </Button>
                   <Button variant="ghost" size="icon">
                     <MoreVertical className="h-4 w-4" />
@@ -347,49 +538,124 @@ export default function MessagesPage() {
                 </div>
                 
                 <div className="flex items-center space-x-2">
-                  <Button variant="ghost" size="icon">
-                    <Star className="h-4 w-4" />
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    onClick={handleStarConversation}
+                    className={selectedConversation.isStarred ? 'text-yellow-500' : ''}
+                  >
+                    <Star className={`h-4 w-4 ${selectedConversation.isStarred ? 'fill-current' : ''}`} />
                   </Button>
-                  <Button variant="ghost" size="icon">
-                    <MoreVertical className="h-4 w-4" />
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    onClick={handleArchiveConversation}
+                  >
+                    <Archive className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    onClick={handleDeleteConversation}
+                  >
+                    <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
 
-              {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {messages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={`flex ${message.senderId === user?.uid ? 'justify-end' : 'justify-start'}`}
-                  >
-                    <div
-                      className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                        message.senderId === user?.uid
-                          ? 'bg-blue-500 text-white'
-                          : 'bg-gray-200 text-gray-900'
-                      }`}
-                    >
-                      <p className="text-sm">{message.content}</p>
-                      <p className={`text-xs mt-1 ${
-                        message.senderId === user?.uid ? 'text-blue-100' : 'text-gray-500'
-                      }`}>
-                        {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </p>
+              {/* Messages Container */}
+              <div className="flex-1 p-4 bg-gray-50 overflow-y-auto">
+                <div className="space-y-4">
+                  {messagesLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
                     </div>
-                  </div>
-                ))}
+                  ) : messages.length === 0 ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="text-center">
+                        <MessageSquare className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                        <p className="text-gray-500">No messages yet. Start the conversation!</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      {messages.map((message) => (
+                        <div
+                          key={message.id}
+                          className={`flex ${message.senderId === user?.uid ? 'justify-end' : 'justify-start'}`}
+                        >
+                          <div
+                            className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                              message.senderId === user?.uid
+                                ? 'bg-blue-500 text-white'
+                                : 'bg-white text-gray-900 border'
+                            }`}
+                          >
+                            {message.attachment && (
+                              <div className="mb-2">
+                                <Image
+                                  src={message.attachment.url}
+                                  alt={message.attachment.filename}
+                                  width={200}
+                                  height={150}
+                                  className="rounded-lg object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                                  onClick={() => handleImageClick(message.attachment.url, message.attachment.filename)}
+                                />
+                              </div>
+                            )}
+                            <p className="text-sm">{message.content}</p>
+                            <div className={`flex items-center justify-between mt-1 ${
+                              message.senderId === user?.uid ? 'text-blue-100' : 'text-gray-500'
+                            }`}>
+                              <p className="text-xs">
+                                {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      {/* Scroll anchor */}
+                      <div ref={messagesEndRef} />
+                    </>
+                  )}
+                </div>
               </div>
+
+              {/* Image Preview */}
+              {imagePreview && (
+                <div className="p-4 border-t bg-gray-100">
+                  <div className="flex items-center space-x-2">
+                    <Image
+                      src={imagePreview}
+                      alt="Preview"
+                      width={60}
+                      height={60}
+                      className="rounded-lg object-cover"
+                    />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">{selectedImage?.name}</p>
+                      <p className="text-xs text-gray-500">Ready to send</p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleRemoveImage}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
 
               {/* Message Input */}
               <div className="p-4 border-t bg-white">
                 <div className="flex items-center space-x-2">
-                  <Button variant="ghost" size="icon">
-                    <Smile className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon">
-                    <Paperclip className="h-4 w-4" />
-                  </Button>
+                  <EmojiPicker onEmojiSelect={handleEmojiSelect} />
+                  <ImageUpload 
+                    onImageSelect={handleImageSelect} 
+                    disabled={sendingMessage}
+                    clearPreview={clearImagePreview}
+                  />
                   <Input
                     placeholder="Write A Message"
                     value={newMessage}
@@ -399,7 +665,7 @@ export default function MessagesPage() {
                   />
                   <Button
                     onClick={handleSendMessage}
-                    disabled={!newMessage.trim() || sendingMessage}
+                    disabled={(!newMessage.trim() && !selectedImage) || sendingMessage}
                     className="bg-blue-600 hover:bg-blue-700"
                   >
                     {sendingMessage ? (
@@ -422,6 +688,14 @@ export default function MessagesPage() {
           )}
         </div>
       </div>
+
+      {/* Image Modal */}
+      <ImageModal
+        isOpen={imageModal.isOpen}
+        onClose={() => setImageModal({ isOpen: false, url: '', name: '' })}
+        imageUrl={imageModal.url}
+        imageName={imageModal.name}
+      />
     </div>
   );
 }

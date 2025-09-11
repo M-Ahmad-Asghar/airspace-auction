@@ -144,7 +144,14 @@ export function ListingDetailView({ listing }: { listing: DocumentData }) {
      <>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 my-8">
         {listing.price && <StatCard icon={<Tag size={28} />} label="Price" value={`$${listing.price.toLocaleString()}`} />}
-        {listing.date && <StatCard icon={<CalendarDays size={28} />} label="Date" value={format(new Date(listing.date), 'MMM dd, yyyy')} />}
+        {listing.date && <StatCard icon={<CalendarDays size={28} />} label="Date" value={(() => {
+          try {
+            const date = new Date(listing.date);
+            return isNaN(date.getTime()) ? 'Invalid Date' : format(date, 'MMM dd, yyyy');
+          } catch {
+            return 'Invalid Date';
+          }
+        })()} />}
         {listing.location && <StatCard icon={<MapPin size={28} />} label="Location" value={listing.location} />}
       </div>
     </>
@@ -197,8 +204,8 @@ export function ListingDetailView({ listing }: { listing: DocumentData }) {
   }
 
   const title = listing.category === 'Aircraft' 
-    ? `${listing.year} ${listing.manufacturer} ${listing.model}` 
-    : listing.title;
+    ? `${listing.year || 'Unknown'} ${listing.manufacturer || 'Unknown'} ${listing.model || 'Unknown'}` 
+    : listing.title || 'Untitled Listing';
 
 
   return (

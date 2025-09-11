@@ -10,17 +10,15 @@ import { Button } from '@/components/ui/button';
 import { ChevronRight, X } from 'lucide-react';
 import { ListingListItem } from '@/components/ListingListItem';
 import { SponsoredAdCard } from '@/components/SponsoredAdCard';
+import { safeTimestampToISO } from '@/lib/utils';
 
 
 function formatListingData(listing: DocumentData) {
-  const createdAt = listing.createdAt;
-  // Convert timestamp object to ISO string if it exists
-  const postDateStr = (createdAt && createdAt.seconds)
-    ? new Date(createdAt.seconds * 1000).toISOString()
-    : new Date().toISOString(); // Fallback if no date
+  // Safely convert timestamp with null checks
+  const postDateStr = safeTimestampToISO(listing.createdAt) || new Date().toISOString();
 
   const formattedData = {
-    id: listing.id,
+    id: listing.id || '',
     price: listing.price || 0,
     imageUrl: listing.imageUrls?.[0] || `https://placehold.co/600x450.png`,
     location: listing.location || 'Unknown Location',
@@ -37,8 +35,8 @@ function formatListingData(listing: DocumentData) {
   let imageHint = '';
 
   if (listing.category === 'Aircraft') {
-    title = `${listing.year} ${listing.manufacturer} ${listing.model}`;
-    imageHint = `${listing.manufacturer} ${listing.model}`;
+    title = `${listing.year || 'Unknown'} ${listing.manufacturer || 'Unknown'} ${listing.model || 'Unknown'}`;
+    imageHint = `${listing.manufacturer || 'Unknown'} ${listing.model || 'Unknown'}`;
   } else if (listing.category === 'Events') {
     title = listing.title || 'Event Listing';
     imageHint = 'event concert';
@@ -53,8 +51,8 @@ function formatListingData(listing: DocumentData) {
     imageHint = 'professional service';
   } else {
     // Default for Parts and others
-    title = listing.title || `${listing.manufacturer} Part`;
-    imageHint = `${listing.manufacturer} part`;
+    title = listing.title || `${listing.manufacturer || 'Unknown'} Part`;
+    imageHint = `${listing.manufacturer || 'Unknown'} part`;
   }
   
   return {
@@ -103,10 +101,10 @@ async function Listings({ filters }: { filters: SearchFilters }) {
   
   // Client-side filtering for ranges Firestore doesn't support in a single query
   const filteredListings = listings.filter((listing: DocumentData) => {
-    if (filters.airframeHrMin && listing.totalAirframeTime < filters.airframeHrMin) return false;
-    if (filters.airframeHrMax && listing.totalAirframeTime > filters.airframeHrMax) return false;
-    if (filters.engineHrMin && listing.engineTimeMin < filters.engineHrMin) return false;
-    if (filters.engineHrMax && listing.engineTimeMax > filters.engineHrMax) return false;
+    if (filters.airframeHrMin && (listing.totalAirframeTime || 0) < filters.airframeHrMin) return false;
+    if (filters.airframeHrMax && (listing.totalAirframeTime || 0) > filters.airframeHrMax) return false;
+    if (filters.engineHrMin && (listing.engineTimeMin || 0) < filters.engineHrMin) return false;
+    if (filters.engineHrMax && (listing.engineTimeMax || 0) > filters.engineHrMax) return false;
     return true;
   });
 
@@ -148,7 +146,7 @@ async function Listings({ filters }: { filters: SearchFilters }) {
             {formattedListings.length > 0 ? (
                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                     <div className="lg:col-span-8 space-y-6">
-                        {formattedListings.map(listing => <ListingListItem key={listing.id} listing={listing} />)}
+                        {formattedListings.map((listing: any) => <ListingListItem key={listing.id} listing={listing} />)}
                     </div>
                     <aside className="hidden lg:col-span-4 lg:block space-y-6">
                         <SponsoredAdCard
@@ -183,7 +181,7 @@ async function Listings({ filters }: { filters: SearchFilters }) {
 
         {formattedListings.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {formattedListings.map((listing) => (
+            {formattedListings.map((listing: any) => (
               <ListingCard key={listing.id} listing={listing} />
             ))}
           </div>

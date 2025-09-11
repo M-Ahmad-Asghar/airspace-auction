@@ -136,7 +136,7 @@ async function uploadImages(images: File[], userId: string): Promise<string[]> {
     if (!storage) throw new Error('Firebase Storage is not configured.');
     const imageUrls = await Promise.all(
         images.map(async (image) => {
-        const imageRef = ref(storage, `listings/${userId}/${uuidv4()}-${image.name}`);
+        const imageRef = ref(storage!, `listings/${userId}/${uuidv4()}-${image.name}`);
         await uploadBytes(imageRef, image);
         return getDownloadURL(imageRef);
         })
@@ -146,74 +146,177 @@ async function uploadImages(images: File[], userId: string): Promise<string[]> {
 
 export async function createAircraftListing(formData: Omit<AircraftListingData, 'userId'>, userId: string): Promise<string> {
   if (!isFirebaseConfigured || !db) throw new Error('Firebase is not configured.');
+  if (!userId) throw new Error('User ID is required.');
   
-  const { images, ...listingData } = formData;
-  const newImageFiles = images.filter(img => img instanceof File) as File[];
-  const imageUrls = await uploadImages(newImageFiles, userId);
+  try {
+    const { images, ...listingData } = formData;
+    const newImageFiles = images.filter(img => img instanceof File) as File[];
+    const imageUrls = await uploadImages(newImageFiles, userId);
 
-  const newListingDoc = { ...listingData, userId, imageUrls, createdAt: serverTimestamp() };
-  const docRef = await addDoc(collection(db, 'listings'), newListingDoc);
-  return docRef.id;
+    const newListingDoc = { 
+      ...listingData, 
+      userId, 
+      imageUrls, 
+      createdAt: serverTimestamp(),
+      // Add null checks for required fields
+      year: listingData.year || null,
+      manufacturer: listingData.manufacturer || 'Unknown',
+      model: listingData.model || 'Unknown',
+      price: listingData.price || 0,
+      location: listingData.location || 'Unknown Location',
+      description: listingData.description || 'No description provided.'
+    };
+    
+    const docRef = await addDoc(collection(db, 'listings'), newListingDoc);
+    return docRef.id;
+  } catch (error) {
+    console.error('Error creating aircraft listing:', error);
+    throw new Error('Failed to create aircraft listing. Please try again.');
+  }
 }
 
 export async function createPartListing(formData: Omit<PartListingData, 'userId'>, userId: string): Promise<string> {
   if (!isFirebaseConfigured || !db) throw new Error('Firebase is not configured.');
+  if (!userId) throw new Error('User ID is required.');
+  
+  try {
+    const { images, ...listingData } = formData;
+    const newImageFiles = images.filter(img => img instanceof File) as File[];
+    const imageUrls = await uploadImages(newImageFiles, userId);
 
-  const { images, ...listingData } = formData;
-  const newImageFiles = images.filter(img => img instanceof File) as File[];
-  const imageUrls = await uploadImages(newImageFiles, userId);
-
-  const newListingDoc = { ...listingData, userId, imageUrls, createdAt: serverTimestamp() };
-  const docRef = await addDoc(collection(db, 'listings'), newListingDoc);
-  return docRef.id;
+    const newListingDoc = { 
+      ...listingData, 
+      userId, 
+      imageUrls, 
+      createdAt: serverTimestamp(),
+      // Add null checks for required fields
+      manufacturer: listingData.manufacturer || 'Unknown',
+      price: listingData.price || 0,
+      location: listingData.location || 'Unknown Location',
+      description: listingData.description || 'No description provided.'
+    };
+    
+    const docRef = await addDoc(collection(db, 'listings'), newListingDoc);
+    return docRef.id;
+  } catch (error) {
+    console.error('Error creating part listing:', error);
+    throw new Error('Failed to create part listing. Please try again.');
+  }
 }
 
 export async function createEventListing(formData: Omit<EventListingData, 'userId'>, userId: string): Promise<string> {
   if (!isFirebaseConfigured || !db) throw new Error('Firebase is not configured.');
+  if (!userId) throw new Error('User ID is required.');
   
-  const { images, ...listingData } = formData;
-  const newImageFiles = images.filter(img => img instanceof File) as File[];
-  const imageUrls = await uploadImages(newImageFiles, userId);
+  try {
+    const { images, ...listingData } = formData;
+    const newImageFiles = images.filter(img => img instanceof File) as File[];
+    const imageUrls = await uploadImages(newImageFiles, userId);
 
-  const newListingDoc = { ...listingData, userId, imageUrls, createdAt: serverTimestamp() };
-  const docRef = await addDoc(collection(db, 'listings'), newListingDoc);
-  return docRef.id;
+    const newListingDoc = { 
+      ...listingData, 
+      userId, 
+      imageUrls, 
+      createdAt: serverTimestamp(),
+      // Add null checks for required fields
+      title: listingData.title || 'Event Listing',
+      price: listingData.price || 0,
+      location: listingData.location || 'Unknown Location',
+      description: listingData.description || 'No description provided.'
+    };
+    
+    const docRef = await addDoc(collection(db, 'listings'), newListingDoc);
+    return docRef.id;
+  } catch (error) {
+    console.error('Error creating event listing:', error);
+    throw new Error('Failed to create event listing. Please try again.');
+  }
 }
 
 export async function createRealEstateListing(formData: Omit<RealEstateListingData, 'userId'>, userId: string): Promise<string> {
   if (!isFirebaseConfigured || !db) throw new Error('Firebase is not configured.');
+  if (!userId) throw new Error('User ID is required.');
+  
+  try {
+    const { images, ...listingData } = formData;
+    const newImageFiles = images.filter(img => img instanceof File) as File[];
+    const imageUrls = await uploadImages(newImageFiles, userId);
 
-  const { images, ...listingData } = formData;
-  const newImageFiles = images.filter(img => img instanceof File) as File[];
-  const imageUrls = await uploadImages(newImageFiles, userId);
-
-  const newListingDoc = { ...listingData, userId, imageUrls, createdAt: serverTimestamp() };
-  const docRef = await addDoc(collection(db, 'listings'), newListingDoc);
-  return docRef.id;
+    const newListingDoc = { 
+      ...listingData, 
+      userId, 
+      imageUrls, 
+      createdAt: serverTimestamp(),
+      // Add null checks for required fields
+      title: listingData.title || 'Real Estate Listing',
+      price: listingData.price || 0,
+      location: listingData.location || 'Unknown Location',
+      description: listingData.description || 'No description provided.'
+    };
+    
+    const docRef = await addDoc(collection(db, 'listings'), newListingDoc);
+    return docRef.id;
+  } catch (error) {
+    console.error('Error creating real estate listing:', error);
+    throw new Error('Failed to create real estate listing. Please try again.');
+  }
 }
 
 export async function createPlaceListing(formData: Omit<PlaceListingData, 'userId'>, userId: string): Promise<string> {
   if (!isFirebaseConfigured || !db) throw new Error('Firebase is not configured.');
+  if (!userId) throw new Error('User ID is required.');
+  
+  try {
+    const { images, ...listingData } = formData;
+    const newImageFiles = images.filter(img => img instanceof File) as File[];
+    const imageUrls = await uploadImages(newImageFiles, userId);
 
-  const { images, ...listingData } = formData;
-  const newImageFiles = images.filter(img => img instanceof File) as File[];
-  const imageUrls = await uploadImages(newImageFiles, userId);
-
-  const newListingDoc = { ...listingData, userId, imageUrls, createdAt: serverTimestamp() };
-  const docRef = await addDoc(collection(db, 'listings'), newListingDoc);
-  return docRef.id;
+    const newListingDoc = { 
+      ...listingData, 
+      userId, 
+      imageUrls, 
+      createdAt: serverTimestamp(),
+      // Add null checks for required fields
+      title: listingData.title || 'Place Listing',
+      location: listingData.location || 'Unknown Location',
+      description: listingData.description || 'No description provided.'
+    };
+    
+    const docRef = await addDoc(collection(db, 'listings'), newListingDoc);
+    return docRef.id;
+  } catch (error) {
+    console.error('Error creating place listing:', error);
+    throw new Error('Failed to create place listing. Please try again.');
+  }
 }
 
 export async function createServiceListing(formData: Omit<ServiceListingData, 'userId'>, userId: string): Promise<string> {
   if (!isFirebaseConfigured || !db) throw new Error('Firebase is not configured.');
+  if (!userId) throw new Error('User ID is required.');
+  
+  try {
+    const { images, ...listingData } = formData;
+    const newImageFiles = images.filter(img => img instanceof File) as File[];
+    const imageUrls = await uploadImages(newImageFiles, userId);
 
-  const { images, ...listingData } = formData;
-  const newImageFiles = images.filter(img => img instanceof File) as File[];
-  const imageUrls = await uploadImages(newImageFiles, userId);
-
-  const newListingDoc = { ...listingData, userId, imageUrls, createdAt: serverTimestamp() };
-  const docRef = await addDoc(collection(db, 'listings'), newListingDoc);
-  return docRef.id;
+    const newListingDoc = { 
+      ...listingData, 
+      userId, 
+      imageUrls, 
+      createdAt: serverTimestamp(),
+      // Add null checks for required fields
+      title: listingData.title || 'Service Listing',
+      price: listingData.price || 0,
+      location: listingData.location || 'Unknown Location',
+      description: listingData.description || 'No description provided.'
+    };
+    
+    const docRef = await addDoc(collection(db, 'listings'), newListingDoc);
+    return docRef.id;
+  } catch (error) {
+    console.error('Error creating service listing:', error);
+    throw new Error('Failed to create service listing. Please try again.');
+  }
 }
 
 
@@ -265,9 +368,9 @@ export async function getListings(filters: SearchFilters = {}): Promise<Document
             let listings = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
             // Manual filtering
-            if (category) listings = listings.filter(l => l.category === category);
-            if (searchTerm) listings = listings.filter(l => l.title?.toLowerCase().includes(searchTerm.toLowerCase()));
-            if (yearMin) listings = listings.filter(l => l.year >= yearMin);
+            if (category) listings = listings.filter(l => (l as any).category === category);
+            if (searchTerm) listings = listings.filter(l => (l as any).title?.toLowerCase().includes(searchTerm.toLowerCase()));
+            if (yearMin) listings = listings.filter(l => (l as any).year >= yearMin);
             // ... add other filters here if needed for fallback
 
             return listings.slice(0, count);
@@ -305,7 +408,18 @@ export async function getListingById(listingId: string): Promise<DocumentData | 
             // Convert Firestore Timestamps to JS Date objects before serializing
             return JSON.parse(JSON.stringify(listing, (key, value) => {
                 if (value && value.seconds !== undefined) {
-                    return new Date(value.seconds * 1000).toISOString();
+                    try {
+                        const seconds = Number(value.seconds);
+                        if (!isNaN(seconds) && seconds >= 0) {
+                            const date = new Date(seconds * 1000);
+                            if (!isNaN(date.getTime())) {
+                                return date.toISOString();
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error converting timestamp:', error);
+                    }
+                    return null;
                 }
                 return value;
             }));
@@ -330,7 +444,7 @@ export async function deleteListing(listingId: string): Promise<void> {
     if (imageUrls && Array.isArray(imageUrls)) {
         await Promise.all(
             imageUrls.map(url => {
-                const imageRef = ref(storage, url);
+                const imageRef = ref(storage!, url);
                 return deleteObject(imageRef).catch(err => console.error(`Failed to delete image: ${url}`, err));
             })
         );
@@ -358,7 +472,7 @@ export async function updateListing(listingId: string, formData: DocumentData, u
     const deletedImageUrls = existingImageUrls.filter((url: string) => !currentImageUrls.includes(url));
     await Promise.all(
         deletedImageUrls.map((url: string) => {
-            const imageRef = ref(storage, url);
+            const imageRef = ref(storage!, url);
             return deleteObject(imageRef).catch(err => console.error(`Failed to delete image: ${url}`, err));
         })
     );

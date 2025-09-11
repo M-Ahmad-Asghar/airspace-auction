@@ -36,7 +36,14 @@ export function ListingCard({ listing }: ListingCardProps) {
   };
   
   const formattedDate = listing.postedDate 
-    ? formatDistanceToNow(new Date(listing.postedDate), { addSuffix: true })
+    ? (() => {
+        try {
+          const date = new Date(listing.postedDate);
+          return isNaN(date.getTime()) ? 'N/A' : formatDistanceToNow(date, { addSuffix: true });
+        } catch {
+          return 'N/A';
+        }
+      })()
     : 'N/A';
 
 

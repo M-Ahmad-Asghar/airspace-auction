@@ -13,15 +13,22 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
+import { safeTimestampToDate } from '@/lib/utils';
 
 function formatListingData(listing: DocumentData) {
+  // Safely convert timestamp with null checks
+  const createdAt = safeTimestampToDate(listing.createdAt);
+  const postedDate = createdAt 
+    ? formatDistanceToNow(createdAt).replace('about ', '') + ' ago' 
+    : 'N/A';
+
   const formattedData = {
-    id: listing.id,
-    category: listing.category,
+    id: listing.id || '',
+    category: listing.category || 'Unknown',
     price: listing.price || 0,
     imageUrl: listing.imageUrls?.[0] || `https://placehold.co/600x450.png`,
     location: listing.location || 'Unknown Location',
-    postedDate: listing.createdAt?.seconds ? formatDistanceToNow(new Date(listing.createdAt.seconds * 1000)).replace('about ', '') + ' ago' : 'N/A',
+    postedDate,
     // Placeholders for data not available in the listing document
     rating: 5.0, // Placeholder
     ratingCount: 145, // Placeholder
@@ -31,8 +38,8 @@ function formatListingData(listing: DocumentData) {
   let imageHint = '';
 
   if (listing.category === 'Aircraft') {
-      title = `${listing.year} ${listing.manufacturer} ${listing.model}`;
-      imageHint = `${listing.manufacturer} ${listing.model}`;
+      title = `${listing.year || 'Unknown'} ${listing.manufacturer || 'Unknown'} ${listing.model || 'Unknown'}`;
+      imageHint = `${listing.manufacturer || 'Unknown'} ${listing.model || 'Unknown'}`;
   } else if (listing.category === 'Events') {
       title = listing.title || 'Event Listing';
       imageHint = 'event concert';
@@ -47,8 +54,8 @@ function formatListingData(listing: DocumentData) {
       imageHint = 'professional service';
   } else {
     // Default for Parts and other categories
-    title = listing.title || `${listing.manufacturer} Part`;
-    imageHint = `${listing.manufacturer} part`;
+    title = listing.title || `${listing.manufacturer || 'Unknown'} Part`;
+    imageHint = `${listing.manufacturer || 'Unknown'} part`;
   }
 
   return {
@@ -72,7 +79,14 @@ export default function MyListingsPage() {
             getListingsByUserId(user.uid)
                 .then(data => {
                     const plainData = JSON.parse(JSON.stringify(data));
-                    const sortedData = [...plainData].sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+                    const sortedData = [...plainData].sort((a, b) => {
+                        const aSeconds = a.createdAt?.seconds || 0;
+                        const bSeconds = b.createdAt?.seconds || 0;
+                        // Handle invalid timestamps by treating them as 0 (oldest)
+                        if (isNaN(aSeconds) || aSeconds < 0) return 1;
+                        if (isNaN(bSeconds) || bSeconds < 0) return -1;
+                        return bSeconds - aSeconds;
+                    });
                     const formattedData = sortedData.map(formatListingData);
                     setListings(formattedData);
                 })

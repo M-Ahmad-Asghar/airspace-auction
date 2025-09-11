@@ -10,30 +10,19 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
 import type { DocumentData } from 'firebase/firestore';
 import { FilterSort } from '@/components/FilterSort';
-import { Suspense } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ChevronRight, X, Bookmark, Loader2 } from 'lucide-react';
 import { ListingListItem } from '@/components/ListingListItem';
 import { SponsoredAdCard } from '@/components/SponsoredAdCard';
 
-function formatListingData(listing: DocumentData) {
-  // Convert timestamp to ISO string safely
-  let postDateStr = new Date().toISOString();
-  if (listing.createdAt) {
-    if (typeof listing.createdAt.toDate === 'function') {
-      postDateStr = listing.createdAt.toDate().toISOString();
-    } else if (listing.createdAt.seconds) {
-      postDateStr = new Date(listing.createdAt.seconds * 1000).toISOString();
-    }
-  }
-
+function formatListingData(listing: any) {
   const formattedData = {
     id: listing.id || '',
     price: listing.price || 0,
     imageUrl: listing.imageUrls?.[0] || `https://placehold.co/600x450.png`,
     location: listing.location || 'Unknown Location',
-    postedDate: postDateStr,
+    postedDate: listing.createdAt || new Date().toISOString(),
     userName: 'Joseph Andrew', // Placeholder
     userAvatarUrl: 'https://placehold.co/40x40.png', // Placeholder
     rating: 5.0, // Placeholder
@@ -135,24 +124,42 @@ function getFilterTags(filters: SearchFilters) {
   return tags;
 }
 
-export default function HomePage({ searchParams }: { searchParams?: SearchFilters }) {
+export function HomePageClient({ searchParams }: { searchParams: Promise<SearchFilters> }) {
   const { user } = useAuth();
-  const [listings, setListings] = useState<DocumentData[]>([]);
+  const [listings, setListings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingSearch, setSavingSearch] = useState(false);
+  const [resolvedSearchParams, setResolvedSearchParams] = useState<SearchFilters>({});
+
+  useEffect(() => {
+    const resolveParams = async () => {
+      try {
+        const params = await searchParams;
+        // Filter out debug info and other non-search params
+        const cleanParams = Object.fromEntries(
+          Object.entries(params).filter(([key]) => !key.startsWith('_'))
+        );
+        setResolvedSearchParams(cleanParams);
+      } catch (error) {
+        console.error('Error resolving search params:', error);
+        setResolvedSearchParams({});
+      }
+    };
+    resolveParams();
+  }, [searchParams]);
 
   const filters: SearchFilters = {
-    category: searchParams?.category,
-    searchTerm: searchParams?.searchTerm,
-    type: searchParams?.type,
-    yearMin: searchParams?.yearMin ? Number(searchParams.yearMin) : undefined,
-    yearMax: searchParams?.yearMax ? Number(searchParams.yearMax) : undefined,
-    manufacturer: searchParams?.manufacturer,
-    model: searchParams?.model,
-    airframeHrMin: searchParams?.airframeHrMin ? Number(searchParams.airframeHrMin) : undefined,
-    airframeHrMax: searchParams?.airframeHrMax ? Number(searchParams.airframeHrMax) : undefined,
-    engineHrMin: searchParams?.engineHrMin ? Number(searchParams.engineHrMin) : undefined,
-    engineHrMax: searchParams?.engineHrMax ? Number(searchParams.engineHrMax) : undefined,
+    category: resolvedSearchParams?.category,
+    searchTerm: resolvedSearchParams?.searchTerm,
+    type: resolvedSearchParams?.type,
+    yearMin: resolvedSearchParams?.yearMin ? Number(resolvedSearchParams.yearMin) : undefined,
+    yearMax: resolvedSearchParams?.yearMax ? Number(resolvedSearchParams.yearMax) : undefined,
+    manufacturer: resolvedSearchParams?.manufacturer,
+    model: resolvedSearchParams?.model,
+    airframeHrMin: resolvedSearchParams?.airframeHrMin ? Number(resolvedSearchParams.airframeHrMin) : undefined,
+    airframeHrMax: resolvedSearchParams?.airframeHrMax ? Number(resolvedSearchParams.airframeHrMax) : undefined,
+    engineHrMin: resolvedSearchParams?.engineHrMin ? Number(resolvedSearchParams.engineHrMin) : undefined,
+    engineHrMax: resolvedSearchParams?.engineHrMax ? Number(resolvedSearchParams.engineHrMax) : undefined,
   };
 
   useEffect(() => {
@@ -183,10 +190,10 @@ export default function HomePage({ searchParams }: { searchParams?: SearchFilter
     return () => {
       isMounted = false;
     };
-  }, [JSON.stringify(filters)]); // Use JSON.stringify to prevent infinite loops
+  }, [JSON.stringify(filters)]);
 
   // Client-side filtering for ranges Firestore doesn't support in a single query
-  const filteredListings = listings.filter((listing: DocumentData) => {
+  const filteredListings = listings.filter((listing: any) => {
     if (filters.airframeHrMin && (listing.totalAirframeTime || 0) < filters.airframeHrMin) return false;
     if (filters.airframeHrMax && (listing.totalAirframeTime || 0) > filters.airframeHrMax) return false;
     if (filters.engineHrMin && (listing.engineTimeMin || 0) < filters.engineHrMin) return false;
@@ -195,7 +202,12 @@ export default function HomePage({ searchParams }: { searchParams?: SearchFilter
   });
 
   const formattedListings = filteredListings.map(formatListingData);
-  const hasActiveFilters = Object.values(filters).some(val => val !== undefined && val !== '');
+  
+  // Check if there are any active filters (excluding empty strings and undefined)
+  const hasActiveFilters = Object.entries(filters).some(([key, value]) => {
+    if (value === undefined || value === '') return false;
+    return true;
+  });
 
   const handleSaveSearch = async () => {
     if (!user) {
@@ -223,7 +235,7 @@ export default function HomePage({ searchParams }: { searchParams?: SearchFilter
       const success = await saveSearch(user.uid, {
         title: searchTitle,
         filters: {
-          searchTerm: filters.searchTerm, // Include searchTerm in saved filters
+          searchTerm: filters.searchTerm,
           category: filters.category,
           type: filters.type,
           priceMin: filters.priceMin,
@@ -273,6 +285,7 @@ export default function HomePage({ searchParams }: { searchParams?: SearchFilter
     );
   }
 
+  // Show filtered view only when there are actual active filters
   if (hasActiveFilters) {
     const filterTags = getFilterTags(filters);
     const clearLink = filters.category ? `/home?category=${filters.category}` : '/home';
@@ -339,6 +352,7 @@ export default function HomePage({ searchParams }: { searchParams?: SearchFilter
     );
   }
 
+  // Normal home page view (no active filters)
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />

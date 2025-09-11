@@ -1,6 +1,6 @@
-
 "use client";
 
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Card } from '@/components/ui/card';
@@ -9,6 +9,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Heart, Share2, Star, MapPin } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { useAuth } from '@/hooks/useAuth';
+import { addToWishlist, removeFromWishlist, isInWishlist } from '@/services/wishlistService';
+import { toast } from '@/hooks/use-toast';
 
 interface ListingCardProps {
   listing: {
@@ -23,16 +26,124 @@ interface ListingCardProps {
     userAvatarUrl: string;
     rating: number;
     ratingCount: number;
+    // Additional fields for wishlist functionality
+    manufacturer?: string;
+    model?: string;
+    year?: number;
+    category?: string;
+    imageUrls?: string[];
   };
 }
 
 export function ListingCard({ listing }: ListingCardProps) {
+  const { user } = useAuth();
+  const [isWishlisted, setIsWishlisted] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   
-  const handleActionClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+  // Check if item is in wishlist on component mount
+  useEffect(() => {
+    const checkWishlistStatus = async () => {
+      if (user) {
+        try {
+          const inWishlist = await isInWishlist(user.uid, listing.id);
+          setIsWishlisted(inWishlist);
+        } catch (error) {
+          console.error('Error checking wishlist status:', error);
+        }
+      }
+    };
+    
+    checkWishlistStatus();
+  }, [user, listing.id]);
+  
+  const handleWishlistClick = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     e.preventDefault();
-    // Action logic here, e.g., adding to favorites
-    console.log('Action button clicked');
+    
+    if (!user) {
+      toast({
+        title: "Login Required",
+        description: "Please log in to add items to your wishlist.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsLoading(true);
+    
+    try {
+      if (isWishlisted) {
+        // Remove from wishlist
+        const success = await removeFromWishlist(user.uid, listing.id);
+        if (success) {
+          setIsWishlisted(false);
+          toast({
+            title: "Removed from Wishlist",
+            description: `${listing.title} has been removed from your wishlist.`,
+          });
+        } else {
+          toast({
+            title: "Error",
+            description: "Failed to remove item from wishlist.",
+            variant: "destructive",
+          });
+        }
+      } else {
+        // Add to wishlist
+        const success = await addToWishlist(user.uid, listing);
+        if (success) {
+          setIsWishlisted(true);
+          toast({
+            title: "Added to Wishlist",
+            description: `${listing.title} has been added to your wishlist.`,
+          });
+        } else {
+          toast({
+            title: "Already in Wishlist",
+            description: "This item is already in your wishlist.",
+            variant: "destructive",
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error handling wishlist:', error);
+      toast({
+        title: "Error",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const handleShareClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    e.preventDefault();
+    
+    // Copy listing URL to clipboard
+    const listingUrl = `${window.location.origin}/listing/${listing.id}`;
+    
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(listingUrl).then(() => {
+        toast({
+          title: "Link Copied",
+          description: "Listing link has been copied to clipboard.",
+        });
+      }).catch(() => {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = listingUrl;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        toast({
+          title: "Link Copied",
+          description: "Listing link has been copied to clipboard.",
+        });
+      });
+    }
   };
   
   const formattedDate = listing.postedDate 
@@ -46,7 +157,6 @@ export function ListingCard({ listing }: ListingCardProps) {
       })()
     : 'N/A';
 
-
   return (
     <Link href={`/listing/${listing.id}`} className="block">
       <Card className="overflow-hidden transition-shadow duration-300 hover:shadow-xl rounded-0 border group">
@@ -55,25 +165,44 @@ export function ListingCard({ listing }: ListingCardProps) {
             <Image
               src={listing.imageUrl}
               alt={listing.title}
-              layout="fill"
-              objectFit="cover"
-              className="bg-muted"
+              fill
+              className="object-cover bg-muted"
               data-ai-hint={listing.imageHint}
             />
           </div>
-          <Button variant="ghost" size="icon" className="absolute top-3 right-3 bg-black/30 hover:bg-black/50 text-white rounded-full h-9 w-9" onClick={handleActionClick}>
-            <Heart className="h-5 w-5" />
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className={`absolute top-3 right-3 rounded-full h-9 w-9 transition-colors ${
+              isWishlisted 
+                ? 'bg-red-500 hover:bg-red-600 text-white' 
+                : 'bg-black/30 hover:bg-black/50 text-white'
+            }`}
+            onClick={handleWishlistClick}
+            disabled={isLoading}
+          >
+            <Heart className={`h-5 w-5 ${isWishlisted ? 'fill-current' : ''}`} />
           </Button>
         </div>
         <div className="p-4 space-y-3 bg-card">
           <div className="flex justify-between items-start">
             <h3 className="font-bold text-xl truncate">{listing.title}</h3>
-            <Button variant="ghost" size="icon" className="text-muted-foreground -mr-2 -mt-1" onClick={handleActionClick}>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="text-muted-foreground -mr-2 -mt-1 hover:text-primary" 
+              onClick={handleShareClick}
+            >
               <Share2 className="h-5 w-5" />
             </Button>
           </div>
           <div className="flex justify-between items-center">
-            <p className="text-0 font-bold text-primary">${Number(listing.price).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+            <p className="text-0 font-bold text-primary">
+              ${Number(listing.price).toLocaleString('en-US', {
+                minimumFractionDigits: 2, 
+                maximumFractionDigits: 2
+              })}
+            </p>
             <div className="flex items-center gap-1.5">
               <Star className="text-primary fill-primary h-5 w-5" />
               <span className="font-bold">{listing.rating.toFixed(1)}</span>
@@ -93,7 +222,9 @@ export function ListingCard({ listing }: ListingCardProps) {
                 <span className="truncate">{listing.location}</span>
               </div>
             </div>
-            <span className="text-sm text-muted-foreground self-end flex-shrink-0 whitespace-nowrap">{formattedDate}</span>
+            <span className="text-sm text-muted-foreground self-end flex-shrink-0 whitespace-nowrap">
+              {formattedDate}
+            </span>
           </div>
         </div>
       </Card>

@@ -1,4 +1,3 @@
-
 import { Header } from '@/components/Header';
 import { ListingCard } from '@/components/ListingCard';
 import { getListings, type SearchFilters } from '@/services/listingService';

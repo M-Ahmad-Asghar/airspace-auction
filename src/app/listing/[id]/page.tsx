@@ -1,11 +1,11 @@
-
 import { getListingById } from '@/services/listingService';
 import { ListingDetailView } from '@/components/ListingDetailView';
 import { notFound } from 'next/navigation';
 import { Header } from '@/components/Header';
 
-export default async function ListingDetailPage({ params }: { params: { id: string } }) {
-  const listingData = await getListingById(params.id);
+export default async function ListingDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = await params;
+  const listingData = await getListingById(resolvedParams.id);
 
   if (!listingData) {
     notFound();

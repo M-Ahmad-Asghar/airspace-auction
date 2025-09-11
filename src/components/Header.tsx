@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -18,8 +17,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from '@/hooks/use-toast';
-import { Search, Mic, Plus, MessageSquare, LogOut } from 'lucide-react';
+import { Search, Mic, Plus, MessageSquare, LogOut, HelpCircle } from 'lucide-react';
 import { Logo } from './Logo';
+import { ChatDropdown } from './ChatDropdown';
 import { useAuth } from '@/hooks/useAuth';
 import { CATEGORIES } from '@/lib/constants';
 
@@ -131,9 +131,8 @@ export function Header() {
                 </Button>
             )}
 
-            <Button variant="ghost" size="icon" className="hidden sm:inline-flex">
-                <MessageSquare />
-            </Button>
+            {/* Chat Dropdown */}
+            {user && <ChatDropdown />}
             
             {user && (
               <DropdownMenu>
@@ -159,17 +158,53 @@ export function Header() {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator className="my-2" />
-                  <DropdownMenuItem className="py-2 cursor-pointer">Dashboard</DropdownMenuItem>
+                  
+                  {/* Dashboard Section */}
+                  <DropdownMenuItem className="py-2 cursor-pointer" asChild>
+                    <Link href="/admin">Dashboard</Link>
+                  </DropdownMenuItem>
+                  
+                  {/* Listings Section */}
                   <DropdownMenuItem className="py-2 cursor-pointer" asChild>
                     <Link href="/my-listings">My Listings</Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem className="py-2 cursor-pointer">Saved Searches</DropdownMenuItem>
-                  <DropdownMenuItem className="py-2 cursor-pointer">Messages</DropdownMenuItem>
-                  <DropdownMenuItem className="py-2 cursor-pointer">Billing & Payments</DropdownMenuItem>
-                  <DropdownMenuItem className="py-2 cursor-pointer">Account Settings</DropdownMenuItem>
-                  <DropdownMenuItem className="py-2 cursor-pointer">Notifications</DropdownMenuItem>
-                  <DropdownMenuItem className="py-2 cursor-pointer">Support & Help</DropdownMenuItem>
+                  
+                  {/* Search Section */}
+                  <DropdownMenuItem className="py-2 cursor-pointer" asChild>
+                    <Link href="/admin/search">Saved Searches</Link>
+                  </DropdownMenuItem>
+                  
+                  {/* Messages Section */}
+                  <DropdownMenuItem className="py-2 cursor-pointer" asChild>
+                    <Link href="/admin/messages">Messages</Link>
+                  </DropdownMenuItem>
+                  
+                  {/* Billing & Payments Section */}
+                  <DropdownMenuItem className="py-2 cursor-pointer" asChild>
+                    <Link href="/admin/billing">Billing & Payments</Link>
+                  </DropdownMenuItem>
+                  
+                  {/* Account Section */}
+                  <DropdownMenuItem className="py-2 cursor-pointer" asChild>
+                    <Link href="/admin/profile">Account Settings</Link>
+                  </DropdownMenuItem>
+                  
+                  {/* Notifications Section */}
+                  <DropdownMenuItem className="py-2 cursor-pointer" asChild>
+                    <Link href="/admin/notifications">Notifications</Link>
+                  </DropdownMenuItem>
+                  
+                  {/* Support Section */}
+                  <DropdownMenuItem className="py-2 cursor-pointer" asChild>
+                    <Link href="/admin/help">
+                      <HelpCircle className="mr-2 h-4 w-4" />
+                      Support & Help
+                    </Link>
+                  </DropdownMenuItem>
+                  
                   <DropdownMenuSeparator className="my-2" />
+                  
+                  {/* Logout Section */}
                   <DropdownMenuItem className="py-2 cursor-pointer" onClick={handleLogout}>
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Logout</span>

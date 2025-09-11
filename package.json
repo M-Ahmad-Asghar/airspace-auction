@@ -9,7 +9,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "add-dummy-data": "node scripts/add-dummy-data.js",
+    "add-ad-performance-data": "node scripts/add-ad-performance-data.js"
   },
   "dependencies": {
     "@genkit-ai/googleai": "^1.8.0",

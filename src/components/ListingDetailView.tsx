@@ -8,7 +8,6 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { 
   MapPin, 
   Camera, 
-  MessageSquare, 
   Heart, 
   Share2, 
   Bookmark,
@@ -26,6 +25,7 @@ import {
   Briefcase
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { MessageButton } from './MessageButton';
 
 interface StatCardProps {
   icon: React.ReactNode;
@@ -98,183 +98,233 @@ export function ListingDetailView({ listing }: { listing: DocumentData }) {
         <DetailRow label="Registration" value={listing.registration} />
         <DetailRow label="Serial Number" value={listing.propellerSerials} />
         <DetailRow label="Total Airframe Time" value={listing.totalAirframeTime ? `${listing.totalAirframeTime} hrs` : null} />
-        <DetailRow label="Additional Equipment" value={listing.additional} />
-      </DetailSection>
-      <DetailSection title="Avionics">
-        <DetailRow label="Avionics/Radios" value={listing.avionics} />
+        <DetailRow label="Engine Time" value={listing.engineTimeMin ? `${listing.engineTimeMin} hrs` : null} />
+        <DetailRow label="Propeller Time" value={listing.propellerTimeMin ? `${listing.propellerTimeMin} hrs` : null} />
+        <DetailRow label="Inspection Status" value={listing.inspectionStatus} />
+        <DetailRow label="IFR Certified" value={listing.ifr ? 'Yes' : 'No'} />
       </DetailSection>
       <DetailSection title="Engine Details">
-          <DetailRow label="Engine" value={listing.engineDetails} />
-          <DetailRow label="Engine Time" value={listing.engineTimeMin ? `${listing.engineTimeMin} hrs` : null} />
+        <DetailRow label="Engine Type" value={listing.engineDetails} />
+        <DetailRow label="Propeller Type" value={listing.propellerType} />
+        <DetailRow label="Propeller Serial" value={listing.propellerSerials} />
       </DetailSection>
-      <DetailSection title="Propellers">
-          <DetailRow label="Propeller" value={listing.propellerDetails} />
-          <DetailRow label="Propeller Time" value={listing.propellerTimeMin ? `${listing.propellerTimeMin} hrs` : null} />
+      <DetailSection title="Avionics">
+        <DetailRow label="Avionics Package" value={listing.avionics} />
       </DetailSection>
-       <DetailSection title="Exterior">
-         <p className="text-sm text-foreground">{listing.exteriorDetails || '-'}</p>
-      </DetailSection>
-      <DetailSection title="Interior">
-         <p className="text-sm text-foreground">{listing.interiorDetails || '-'}</p>
-      </DetailSection>
-       <DetailSection title="Inspection Status">
-         <p className="text-sm text-foreground">{listing.inspectionStatus || '-'}</p>
-      </DetailSection>
-    </>
-  );
-
-  const renderPartDetails = () => (
-     <>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 my-8">
-        {listing.price && <StatCard icon={<Tag size={28} />} label="Price" value={`$${listing.price.toLocaleString()}`} />}
-        {listing.hours && <StatCard icon={<Wrench size={28} />} label="Hours" value={listing.hours} />}
-        {listing.manufacturer && <StatCard icon={<Factory size={28} />} label="Manufacturer" value={listing.manufacturer} />}
-        {listing.year && <StatCard icon={<CalendarDays size={28} />} label="Year" value={listing.year} />}
-      </div>
-      <DetailSection title="Part Information">
-        <DetailRow label="Location" value={listing.location} />
-        <DetailRow label="Manufacturer" value={listing.manufacturer} />
-        <DetailRow label="Year" value={listing.year} />
-        <DetailRow label="Hours" value={listing.hours} />
+      <DetailSection title="Additional Information">
+        <DetailRow label="Exterior Details" value={listing.exteriorDetails} />
+        <DetailRow label="Interior Details" value={listing.interiorDetails} />
+        <DetailRow label="Additional Features" value={listing.additional} />
+        <DetailRow label="YouTube Link" value={listing.youtubeLink ? 'Available' : null} />
       </DetailSection>
     </>
   );
 
   const renderEventDetails = () => (
-     <>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 my-8">
-        {listing.price && <StatCard icon={<Tag size={28} />} label="Price" value={`$${listing.price.toLocaleString()}`} />}
-        {listing.date && <StatCard icon={<CalendarDays size={28} />} label="Date" value={(() => {
-          try {
-            const date = new Date(listing.date);
-            return isNaN(date.getTime()) ? 'Invalid Date' : format(date, 'MMM dd, yyyy');
-          } catch {
-            return 'Invalid Date';
-          }
-        })()} />}
+    <>
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 my-8">
+        {listing.date && <StatCard icon={<CalendarDays size={28} />} label="Event Date" value={format(new Date(listing.date), 'MMM dd, yyyy')} />}
         {listing.location && <StatCard icon={<MapPin size={28} />} label="Location" value={listing.location} />}
       </div>
+      <DetailSection title="Event Information">
+        <DetailRow label="Event Date" value={listing.date ? format(new Date(listing.date), 'MMMM dd, yyyy') : null} />
+        <DetailRow label="Location" value={listing.location} />
+        <DetailRow label="Event Type" value={listing.type} />
+      </DetailSection>
     </>
   );
 
   const renderRealEstateDetails = () => (
-     <>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 my-8">
-        {listing.price && <StatCard icon={<Tag size={28} />} label="Price" value={`$${listing.price.toLocaleString()}`} />}
-        {listing.beds && <StatCard icon={<BedDouble size={28} />} label="Beds" value={listing.beds} />}
-        {listing.baths && <StatCard icon={<Bath size={28} />} label="Baths" value={listing.baths} />}
-        {listing.hangerIncluded && <StatCard icon={<Plane size={28} />} label="Hangar" value={listing.hangerIncluded} />}
+    <>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 my-8">
+        {listing.beds && <StatCard icon={<BedDouble size={28} />} label="Bedrooms" value={listing.beds} />}
+        {listing.baths && <StatCard icon={<Bath size={28} />} label="Bathrooms" value={listing.baths} />}
+        {listing.hangerIncluded && <StatCard icon={<Building size={28} />} label="Hangar" value="Included" />}
       </div>
       <DetailSection title="Property Information">
-        <DetailRow label="Location" value={listing.location} />
-        <DetailRow label="Beds" value={listing.beds} />
-        <DetailRow label="Baths" value={listing.baths} />
-        <DetailRow label="Hangar Included" value={listing.hangerIncluded} />
+        <DetailRow label="Bedrooms" value={listing.beds} />
+        <DetailRow label="Bathrooms" value={listing.baths} />
+        <DetailRow label="Hangar Included" value={listing.hangerIncluded ? 'Yes' : 'No'} />
       </DetailSection>
     </>
   );
 
   const renderPlaceDetails = () => (
-     <>
-      <div className="grid grid-cols-1 gap-4 my-8">
+    <>
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 my-8">
         {listing.location && <StatCard icon={<MapPin size={28} />} label="Location" value={listing.location} />}
       </div>
+      <DetailSection title="Place Information">
+        <DetailRow label="Location" value={listing.location} />
+        <DetailRow label="Place Type" value={listing.type} />
+      </DetailSection>
     </>
   );
 
   const renderServiceDetails = () => (
-     <>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 my-8">
-        {listing.price && <StatCard icon={<Tag size={28} />} label="Price" value={`$${listing.price.toLocaleString()}`} />}
-        {listing.location && <StatCard icon={<MapPin size={28} />} label="Location" value={listing.location} />}
+    <>
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 my-8">
+        {listing.location && <StatCard icon={<MapPin size={28} />} label="Service Area" value={listing.location} />}
+        {listing.type && <StatCard icon={<Briefcase size={28} />} label="Service Type" value={listing.type} />}
       </div>
+      <DetailSection title="Service Information">
+        <DetailRow label="Service Type" value={listing.type} />
+        <DetailRow label="Service Area" value={listing.location} />
+      </DetailSection>
+    </>
+  );
+
+  const renderPartsDetails = () => (
+    <>
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 my-8">
+        {listing.manufacturer && <StatCard icon={<Factory size={28} />} label="Manufacturer" value={listing.manufacturer} />}
+        {listing.model && <StatCard icon={<Puzzle size={28} />} label="Model" value={listing.model} />}
+        {listing.year && <StatCard icon={<CalendarDays size={28} />} label="Year" value={listing.year} />}
+      </div>
+      <DetailSection title="Parts Information">
+        <DetailRow label="Manufacturer" value={listing.manufacturer} />
+        <DetailRow label="Model" value={listing.model} />
+        <DetailRow label="Year" value={listing.year} />
+        <DetailRow label="Part Type" value={listing.type} />
+        <DetailRow label="Condition" value={listing.condition} />
+      </DetailSection>
     </>
   );
 
   const renderDetails = () => {
-    switch(listing.category) {
+    switch (listing.category) {
       case 'Aircraft': return renderAircraftDetails();
-      case 'Parts': return renderPartDetails();
       case 'Events': return renderEventDetails();
       case 'Real Estate': return renderRealEstateDetails();
       case 'Places': return renderPlaceDetails();
       case 'Services': return renderServiceDetails();
+      case 'Parts': return renderPartsDetails();
       default: return null;
     }
-  }
-
-  const title = listing.category === 'Aircraft' 
-    ? `${listing.year || 'Unknown'} ${listing.manufacturer || 'Unknown'} ${listing.model || 'Unknown'}` 
-    : listing.title || 'Untitled Listing';
-
+  };
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="max-w-6xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-        <div>
-          <h1 className="text-4xl font-bold text-foreground">{title}</h1>
-          <div className="flex items-center gap-4 text-muted-foreground mt-2">
-            <div className="flex items-center gap-1.5">
-              <MapPin size={16} />
-              <span>{listing.location || '-'}</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <Camera size={16} />
-              <span>{listing.imageUrls?.length || 0} Images</span>
-            </div>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-foreground mb-2">{listing.title || 'Untitled Listing'}</h1>
+        <div className="flex items-center gap-4 text-muted-foreground">
+          <div className="flex items-center gap-1">
+            <MapPin size={16} />
+            <span>{listing.location || 'Location not specified'}</span>
           </div>
-        </div>
-        <div className="flex items-center gap-4 mt-4 md:mt-0">
-          <div>
-            <p className="text-3xl font-bold text-foreground">${listing.price ? Number(listing.price).toLocaleString() : 'N/A'}</p>
+          <div className="flex items-center gap-1">
+            <Camera size={16} />
+            <span>{listing.imageUrls?.length || 0} Images</span>
           </div>
-          <div className="flex items-center gap-2">
-            <Avatar>
-              <AvatarImage src={listing.userAvatarUrl} data-ai-hint="person portrait"/>
-              <AvatarFallback>{getInitials(listing.userName)}</AvatarFallback>
-            </Avatar>
-            <div>
-              <p className="font-semibold text-foreground">Joe Seller</p>
-              <p className="text-sm text-muted-foreground">5.0 (145)</p>
-            </div>
-          </div>
-          <Button variant="ghost" size="icon">
-            <MessageSquare />
-          </Button>
         </div>
       </div>
 
-      {/* Image Gallery */}
-      <div className="grid grid-cols-1 gap-2">
-        <div className="relative aspect-[16/10] w-full overflow-hidden rounded-lg">
-          <Image src={mainImage} alt="Main listing image" layout="fill" objectFit="cover" className="bg-muted"/>
-        </div>
-        <div className="grid grid-cols-5 gap-2">
-          {listing.imageUrls?.map((url: string, index: number) => (
-            <div
-              key={index}
-              className={`relative aspect-video w-full cursor-pointer overflow-hidden rounded-md transition-opacity hover:opacity-80 ${mainImage === url ? 'ring-2 ring-primary ring-offset-2' : ''}`}
-              onClick={() => setMainImage(url)}
-            >
-              <Image src={url} alt={`Thumbnail ${index + 1}`} layout="fill" objectFit="cover" className="bg-muted"/>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Main Content */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Image Gallery */}
+          <div className="grid grid-cols-1 gap-2">
+            <div className="relative aspect-[16/10] w-full overflow-hidden rounded-lg">
+              <Image 
+                src={mainImage} 
+                alt="Main listing image" 
+                fill
+                className="object-cover bg-muted"
+              />
             </div>
-          ))}
+            <div className="grid grid-cols-5 gap-2">
+              {listing.imageUrls?.map((url: string, index: number) => (
+                <div
+                  key={index}
+                  className={`relative aspect-video w-full cursor-pointer overflow-hidden rounded-md transition-opacity hover:opacity-80 ${mainImage === url ? 'ring-2 ring-primary ring-offset-2' : ''}`}
+                  onClick={() => setMainImage(url)}
+                >
+                  <Image 
+                    src={url} 
+                    alt={`Thumbnail ${index + 1}`} 
+                    fill
+                    className="object-cover bg-muted"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Actions and Description */}
+          <div className="flex justify-between items-center mt-6 py-4 border-b">
+             <p className="text-sm text-foreground max-w-4xl">{listing.description || '-'}</p>
+             <div className="flex items-center gap-2">
+                <Button variant="outline" size="icon"><Heart /></Button>
+                <Button variant="outline" size="icon"><Share2 /></Button>
+                <Button variant="outline" size="icon"><Bookmark /></Button>
+             </div>
+          </div>
+          
+          {/* Dynamic Details */}
+          {renderDetails()}
+        </div>
+
+        {/* Sidebar */}
+        <div className="space-y-6">
+          {/* Price and Seller Info */}
+          <div className="bg-card border rounded-lg p-6">
+            <div className="text-center mb-6">
+              <div className="text-3xl font-bold text-foreground mb-2">
+                ${listing.price ? (listing.price / 1000000).toFixed(1) + 'M' : 'Price not specified'}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                {listing.category} • {listing.year || 'Year not specified'}
+              </div>
+            </div>
+
+            {/* Seller Information */}
+            <div className="border-t pt-6">
+              <div className="flex items-center gap-3 mb-4">
+                <Avatar className="h-12 w-12">
+                  <AvatarImage src="https://placehold.co/48x48.png" alt="Seller avatar" />
+                  <AvatarFallback>{getInitials('Joe Seller')}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <h3 className="font-semibold text-foreground">Joe Seller</h3>
+                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                    <span>5.0</span>
+                    <span>(145 reviews)</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Message Button */}
+              <MessageButton 
+                listingId={listing.id}
+                adOwnerId={listing.userId}
+                listingData={listing}
+              />
+            </div>
+          </div>
+
+          {/* Additional Info */}
+          <div className="bg-card border rounded-lg p-6">
+            <h3 className="font-semibold text-foreground mb-4">Listing Information</h3>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Posted</span>
+                <span className="text-foreground">
+                  {listing.createdAt ? format(new Date(listing.createdAt), 'MMM dd, yyyy') : 'Unknown'}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Category</span>
+                <span className="text-foreground">{listing.category}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Location</span>
+                <span className="text-foreground">{listing.location}</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-
-      {/* Actions and Description */}
-      <div className="flex justify-between items-center mt-6 py-4 border-b">
-         <p className="text-sm text-foreground max-w-4xl">{listing.description || '-'}</p>
-         <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon"><Heart /></Button>
-            <Button variant="outline" size="icon"><Share2 /></Button>
-            <Button variant="outline" size="icon"><Bookmark /></Button>
-         </div>
-      </div>
-      
-      {/* Dynamic Details */}
-      {renderDetails()}
     </div>
   );
 }

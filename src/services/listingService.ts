@@ -1,125 +1,13 @@
+import { db } from '@/lib/firebase';
+import { collection, getDocs, query, where, orderBy, limit, DocumentData } from 'firebase/firestore';
 
-'use server';
-
-import { db, storage, isFirebaseConfigured } from '@/lib/firebase';
-import {
-  collection,
-  addDoc,
-  getDocs,
-  query,
-  orderBy,
-  limit,
-  serverTimestamp,
-  where,
-  doc,
-  getDoc,
-  updateDoc,
-  deleteDoc,
-  type DocumentData,
-  type Query,
-  QueryConstraint,
-} from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
-import { v4 as uuidv4 } from 'uuid';
-
-
-// Interfaces for listing creation forms
-export interface AircraftListingData {
-  userId: string;
-  category: string;
-  type: string;
-  images: (File | string)[];
-  location: string;
-  price: number;
-  registration: string;
-  year: number;
-  manufacturer: string;
-  model: string;
-  description: string;
-  totalAirframeTime: number;
-  engineTimeMin?: number;
-  engineTimeMax?: number;
-  engineDetails: string;
-  propellerType: string;
-  propellerTimeMin?: number;
-  propellerTimeMax?: number;
-  propellerDetails: string;
-  propellerSerials: string;
-  avionics: string;
-  additional?: string;
-  exteriorDetails: string;
-  interiorDetails: string;
-  inspectionStatus: string;
-  ifr: string;
-  youtubeLink?: string;
-}
-
-export interface PartListingData {
-  userId: string;
-  category: string;
-  title: string;
-  description: string;
-  images: (File | string)[];
-  location: string;
-  price: number;
-  year?: number;
-  manufacturer: string;
-  hours?: number;
-  upgrade: boolean;
-}
-
-export interface EventListingData {
-  userId: string;
-  category: string;
-  title: string;
-  description: string;
-  images: (File | string)[];
-  location: string;
-  date: Date;
-  price?: number;
-  upgrade: boolean;
-}
-
-export interface RealEstateListingData {
-  userId: string;
-  category: string;
-  title: string;
-  images: (File | string)[];
-  location: string;
-  price: number;
-  description: string;
-  beds: number;
-  baths: number;
-  hangerIncluded: string;
-  upgrade: boolean;
-}
-
-export interface PlaceListingData {
-  userId: string;
-  category: string;
-  title: string;
-  images: (File | string)[];
-  location: string;
-  description: string;
-  upgrade: boolean;
-}
-
-export interface ServiceListingData {
-    userId: string;
-    category: string;
-    title: string;
-    images: (File | string)[];
-    location: string;
-    price: number;
-    description: string;
-    upgrade: boolean;
-}
-
-// Interface for search filters
 export interface SearchFilters {
   category?: string;
   searchTerm?: string;
   type?: string;
+  priceMin?: number;
+  priceMax?: number;
+  location?: string;
   yearMin?: number;
   yearMax?: number;
   manufacturer?: string;
@@ -128,365 +16,121 @@ export interface SearchFilters {
   airframeHrMax?: number;
   engineHrMin?: number;
   engineHrMax?: number;
-  count?: number;
 }
 
-
-async function uploadImages(images: File[], userId: string): Promise<string[]> {
-    if (!storage) throw new Error('Firebase Storage is not configured.');
-    const imageUrls = await Promise.all(
-        images.map(async (image) => {
-        const imageRef = ref(storage!, `listings/${userId}/${uuidv4()}-${image.name}`);
-        await uploadBytes(imageRef, image);
-        return getDownloadURL(imageRef);
-        })
-    );
-    return imageUrls;
-}
-
-export async function createAircraftListing(formData: Omit<AircraftListingData, 'userId'>, userId: string): Promise<string> {
-  if (!isFirebaseConfigured || !db) throw new Error('Firebase is not configured.');
-  if (!userId) throw new Error('User ID is required.');
+// Helper function to convert Firebase Timestamps to plain objects
+function serializeFirebaseData(data: DocumentData): any {
+  const serialized = { ...data };
   
-  try {
-    const { images, ...listingData } = formData;
-    const newImageFiles = images.filter(img => img instanceof File) as File[];
-    const imageUrls = await uploadImages(newImageFiles, userId);
-
-    const newListingDoc = { 
-      ...listingData, 
-      userId, 
-      imageUrls, 
-      createdAt: serverTimestamp(),
-      // Add null checks for required fields
-      year: listingData.year || null,
-      manufacturer: listingData.manufacturer || 'Unknown',
-      model: listingData.model || 'Unknown',
-      price: listingData.price || 0,
-      location: listingData.location || 'Unknown Location',
-      description: listingData.description || 'No description provided.'
-    };
-    
-    const docRef = await addDoc(collection(db, 'listings'), newListingDoc);
-    return docRef.id;
-  } catch (error) {
-    console.error('Error creating aircraft listing:', error);
-    throw new Error('Failed to create aircraft listing. Please try again.');
-  }
-}
-
-export async function createPartListing(formData: Omit<PartListingData, 'userId'>, userId: string): Promise<string> {
-  if (!isFirebaseConfigured || !db) throw new Error('Firebase is not configured.');
-  if (!userId) throw new Error('User ID is required.');
+  // Convert Firebase Timestamps to ISO strings
+  Object.keys(serialized).forEach(key => {
+    const value = serialized[key];
+    if (value && typeof value === 'object') {
+      if (value.seconds !== undefined && value.nanoseconds !== undefined) {
+        // This is a Firebase Timestamp
+        serialized[key] = new Date(value.seconds * 1000).toISOString();
+      } else if (value.toDate && typeof value.toDate === 'function') {
+        // This is a Firebase Timestamp object
+        serialized[key] = value.toDate().toISOString();
+      }
+    }
+  });
   
-  try {
-    const { images, ...listingData } = formData;
-    const newImageFiles = images.filter(img => img instanceof File) as File[];
-    const imageUrls = await uploadImages(newImageFiles, userId);
-
-    const newListingDoc = { 
-      ...listingData, 
-      userId, 
-      imageUrls, 
-      createdAt: serverTimestamp(),
-      // Add null checks for required fields
-      manufacturer: listingData.manufacturer || 'Unknown',
-      price: listingData.price || 0,
-      location: listingData.location || 'Unknown Location',
-      description: listingData.description || 'No description provided.'
-    };
-    
-    const docRef = await addDoc(collection(db, 'listings'), newListingDoc);
-    return docRef.id;
-  } catch (error) {
-    console.error('Error creating part listing:', error);
-    throw new Error('Failed to create part listing. Please try again.');
-  }
+  return serialized;
 }
-
-export async function createEventListing(formData: Omit<EventListingData, 'userId'>, userId: string): Promise<string> {
-  if (!isFirebaseConfigured || !db) throw new Error('Firebase is not configured.');
-  if (!userId) throw new Error('User ID is required.');
-  
-  try {
-    const { images, ...listingData } = formData;
-    const newImageFiles = images.filter(img => img instanceof File) as File[];
-    const imageUrls = await uploadImages(newImageFiles, userId);
-
-    const newListingDoc = { 
-      ...listingData, 
-      userId, 
-      imageUrls, 
-      createdAt: serverTimestamp(),
-      // Add null checks for required fields
-      title: listingData.title || 'Event Listing',
-      price: listingData.price || 0,
-      location: listingData.location || 'Unknown Location',
-      description: listingData.description || 'No description provided.'
-    };
-    
-    const docRef = await addDoc(collection(db, 'listings'), newListingDoc);
-    return docRef.id;
-  } catch (error) {
-    console.error('Error creating event listing:', error);
-    throw new Error('Failed to create event listing. Please try again.');
-  }
-}
-
-export async function createRealEstateListing(formData: Omit<RealEstateListingData, 'userId'>, userId: string): Promise<string> {
-  if (!isFirebaseConfigured || !db) throw new Error('Firebase is not configured.');
-  if (!userId) throw new Error('User ID is required.');
-  
-  try {
-    const { images, ...listingData } = formData;
-    const newImageFiles = images.filter(img => img instanceof File) as File[];
-    const imageUrls = await uploadImages(newImageFiles, userId);
-
-    const newListingDoc = { 
-      ...listingData, 
-      userId, 
-      imageUrls, 
-      createdAt: serverTimestamp(),
-      // Add null checks for required fields
-      title: listingData.title || 'Real Estate Listing',
-      price: listingData.price || 0,
-      location: listingData.location || 'Unknown Location',
-      description: listingData.description || 'No description provided.'
-    };
-    
-    const docRef = await addDoc(collection(db, 'listings'), newListingDoc);
-    return docRef.id;
-  } catch (error) {
-    console.error('Error creating real estate listing:', error);
-    throw new Error('Failed to create real estate listing. Please try again.');
-  }
-}
-
-export async function createPlaceListing(formData: Omit<PlaceListingData, 'userId'>, userId: string): Promise<string> {
-  if (!isFirebaseConfigured || !db) throw new Error('Firebase is not configured.');
-  if (!userId) throw new Error('User ID is required.');
-  
-  try {
-    const { images, ...listingData } = formData;
-    const newImageFiles = images.filter(img => img instanceof File) as File[];
-    const imageUrls = await uploadImages(newImageFiles, userId);
-
-    const newListingDoc = { 
-      ...listingData, 
-      userId, 
-      imageUrls, 
-      createdAt: serverTimestamp(),
-      // Add null checks for required fields
-      title: listingData.title || 'Place Listing',
-      location: listingData.location || 'Unknown Location',
-      description: listingData.description || 'No description provided.'
-    };
-    
-    const docRef = await addDoc(collection(db, 'listings'), newListingDoc);
-    return docRef.id;
-  } catch (error) {
-    console.error('Error creating place listing:', error);
-    throw new Error('Failed to create place listing. Please try again.');
-  }
-}
-
-export async function createServiceListing(formData: Omit<ServiceListingData, 'userId'>, userId: string): Promise<string> {
-  if (!isFirebaseConfigured || !db) throw new Error('Firebase is not configured.');
-  if (!userId) throw new Error('User ID is required.');
-  
-  try {
-    const { images, ...listingData } = formData;
-    const newImageFiles = images.filter(img => img instanceof File) as File[];
-    const imageUrls = await uploadImages(newImageFiles, userId);
-
-    const newListingDoc = { 
-      ...listingData, 
-      userId, 
-      imageUrls, 
-      createdAt: serverTimestamp(),
-      // Add null checks for required fields
-      title: listingData.title || 'Service Listing',
-      price: listingData.price || 0,
-      location: listingData.location || 'Unknown Location',
-      description: listingData.description || 'No description provided.'
-    };
-    
-    const docRef = await addDoc(collection(db, 'listings'), newListingDoc);
-    return docRef.id;
-  } catch (error) {
-    console.error('Error creating service listing:', error);
-    throw new Error('Failed to create service listing. Please try again.');
-  }
-}
-
 
 export async function getListings(filters: SearchFilters = {}): Promise<DocumentData[]> {
-    if (!isFirebaseConfigured || !db) {
-        console.warn('Firebase is not configured, returning empty array.');
-        return [];
+  try {
+    let q = query(collection(db, 'listings'));
+
+    // Apply filters
+    if (filters.category) {
+      q = query(q, where('category', '==', filters.category));
     }
 
-    const {
-        category, searchTerm, type, yearMin, yearMax, manufacturer, model, count = 20
-    } = filters;
-
-    try {
-        const listingsCollectionRef = collection(db, 'listings');
-        const constraints: QueryConstraint[] = [];
-
-        // --- Equality and text search filters ---
-        if (category) constraints.push(where('category', '==', category));
-        if (type) constraints.push(where('type', '==', type));
-        if (manufacturer) constraints.push(where('manufacturer', '==', manufacturer));
-        if (model) constraints.push(where('model', '==', model));
-        if (searchTerm) {
-             constraints.push(where('title', '>=', searchTerm));
-             constraints.push(where('title', '<=', searchTerm + '\uf8ff'));
-        }
-
-        // --- Range filters (only one field can have a range filter in Firestore) ---
-        // We prioritize 'year' for the backend query. Other ranges will be client-filtered.
-        if (yearMin) constraints.push(where('year', '>=', yearMin));
-        if (yearMax) constraints.push(where('year', '<=', yearMax));
-
-        // --- Sorting and Limiting ---
-        constraints.push(orderBy(yearMin || yearMax || searchTerm ? 'year' : 'createdAt', 'desc'));
-        constraints.push(limit(count));
-
-        const q = query(listingsCollectionRef, ...constraints);
-        const querySnapshot = await getDocs(q);
-        
-        return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-    } catch (error) {
-        console.error("Error fetching listings:", error);
-        // Fallback for missing indexes - fetch recent and filter client-side (less efficient)
-        try {
-            console.log('Falling back to a less efficient query. Please create the recommended Firestore index.');
-            const fallbackQuery = query(collection(db, 'listings'), orderBy('createdAt', 'desc'), limit(50));
-            const querySnapshot = await getDocs(fallbackQuery);
-            let listings = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-            // Manual filtering
-            if (category) listings = listings.filter(l => (l as any).category === category);
-            if (searchTerm) listings = listings.filter(l => (l as any).title?.toLowerCase().includes(searchTerm.toLowerCase()));
-            if (yearMin) listings = listings.filter(l => (l as any).year >= yearMin);
-            // ... add other filters here if needed for fallback
-
-            return listings.slice(0, count);
-
-        } catch (fallbackError) {
-             console.error("Error with fallback query:", fallbackError);
-             return [];
-        }
-    }
-}
-
-
-export async function getListingsByUserId(userId: string): Promise<DocumentData[]> {
-    if (!isFirebaseConfigured || !db || !userId) return [];
-
-    try {
-        const q = query(collection(db, 'listings'), where('userId', '==', userId));
-        const querySnapshot = await getDocs(q);
-        const listings = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        return JSON.parse(JSON.stringify(listings));
-    } catch (error) {
-        console.error("Error fetching user listings:", error);
-        return [];
-    }
-}
-
-export async function getListingById(listingId: string): Promise<DocumentData | null> {
-    if (!isFirebaseConfigured || !db) return null;
-    try {
-        const docRef = doc(db, 'listings', listingId);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-            const data = docSnap.data();
-            const listing = { id: docSnap.id, ...data };
-            // Convert Firestore Timestamps to JS Date objects before serializing
-            return JSON.parse(JSON.stringify(listing, (key, value) => {
-                if (value && value.seconds !== undefined) {
-                    try {
-                        const seconds = Number(value.seconds);
-                        if (!isNaN(seconds) && seconds >= 0) {
-                            const date = new Date(seconds * 1000);
-                            if (!isNaN(date.getTime())) {
-                                return date.toISOString();
-                            }
-                        }
-                    } catch (error) {
-                        console.error('Error converting timestamp:', error);
-                    }
-                    return null;
-                }
-                return value;
-            }));
-        }
-        return null;
-    } catch (error) {
-        console.error("Error fetching listing by ID:", error);
-        return null;
-    }
-}
-
-export async function deleteListing(listingId: string): Promise<void> {
-    if (!isFirebaseConfigured || !db || !storage) throw new Error('Firebase is not configured.');
-
-    const docRef = doc(db, 'listings', listingId);
-    const docSnap = await getDoc(docRef);
-
-    if (!docSnap.exists()) throw new Error('Listing not found.');
-    
-    // Delete images from storage
-    const { imageUrls } = docSnap.data();
-    if (imageUrls && Array.isArray(imageUrls)) {
-        await Promise.all(
-            imageUrls.map(url => {
-                const imageRef = ref(storage!, url);
-                return deleteObject(imageRef).catch(err => console.error(`Failed to delete image: ${url}`, err));
-            })
-        );
+    if (filters.searchTerm) {
+      q = query(q, where('title', '>=', filters.searchTerm));
     }
 
-    // Delete Firestore document
-    await deleteDoc(docRef);
-}
+    if (filters.type) {
+      q = query(q, where('type', '==', filters.type));
+    }
 
+    if (filters.manufacturer) {
+      q = query(q, where('manufacturer', '==', filters.manufacturer));
+    }
 
-export async function updateListing(listingId: string, formData: DocumentData, userId: string): Promise<void> {
-    if (!isFirebaseConfigured || !db || !storage) throw new Error('Firebase is not configured.');
+    if (filters.model) {
+      q = query(q, where('model', '==', filters.model));
+    }
 
-    const { images, ...listingData } = formData;
-    
-    const docRef = doc(db, 'listings', listingId);
-    const docSnap = await getDoc(docRef);
-    if (!docSnap.exists()) throw new Error('Listing not found');
+    if (filters.location) {
+      q = query(q, where('location', '==', filters.location));
+    }
 
-    const existingImageUrls = docSnap.data().imageUrls || [];
-    const currentImageUrls = images.filter((img: any) => typeof img === 'string');
-    const newImageFiles = images.filter((img: any) => img instanceof File);
+    // Get all documents first, then filter client-side for complex queries
+    const querySnapshot = await getDocs(q);
+    let listings = querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
 
-    // Identify and delete removed images
-    const deletedImageUrls = existingImageUrls.filter((url: string) => !currentImageUrls.includes(url));
-    await Promise.all(
-        deletedImageUrls.map((url: string) => {
-            const imageRef = ref(storage!, url);
-            return deleteObject(imageRef).catch(err => console.error(`Failed to delete image: ${url}`, err));
-        })
-    );
+    // Client-side filtering for ranges and complex queries
+    if (filters.priceMin !== undefined) {
+      listings = listings.filter(listing => (listing.price || 0) >= filters.priceMin!);
+    }
 
-    // Upload new images
-    const newUploadedUrls = await uploadImages(newImageFiles, userId);
+    if (filters.priceMax !== undefined) {
+      listings = listings.filter(listing => (listing.price || 0) <= filters.priceMax!);
+    }
 
-    // Combine old and new image URLs
-    const finalImageUrls = [...currentImageUrls, ...newUploadedUrls];
+    if (filters.yearMin !== undefined) {
+      listings = listings.filter(listing => (listing.year || 0) >= filters.yearMin!);
+    }
 
-    // Update firestore document
-    await updateDoc(docRef, {
-        ...listingData,
-        imageUrls: finalImageUrls,
-        updatedAt: serverTimestamp()
+    if (filters.yearMax !== undefined) {
+      listings = listings.filter(listing => (listing.year || 0) <= filters.yearMax!);
+    }
+
+    if (filters.airframeHrMin !== undefined) {
+      listings = listings.filter(listing => (listing.totalAirframeTime || 0) >= filters.airframeHrMin!);
+    }
+
+    if (filters.airframeHrMax !== undefined) {
+      listings = listings.filter(listing => (listing.totalAirframeTime || 0) <= filters.airframeHrMax!);
+    }
+
+    if (filters.engineHrMin !== undefined) {
+      listings = listings.filter(listing => (listing.engineTimeMin || 0) >= filters.engineHrMin!);
+    }
+
+    if (filters.engineHrMax !== undefined) {
+      listings = listings.filter(listing => (listing.engineTimeMax || 0) <= filters.engineHrMax!);
+    }
+
+    // Sort by creation date (newest first)
+    listings.sort((a, b) => {
+      const aTime = a.createdAt?.seconds || 0;
+      const bTime = b.createdAt?.seconds || 0;
+      return bTime - aTime;
     });
+
+    // Serialize Firebase data before returning
+    return listings.map(serializeFirebaseData);
+
+  } catch (error) {
+    console.error('Error fetching listings:', error);
+    return [];
+  }
+}
+
+export async function getListingById(id: string): Promise<DocumentData | null> {
+  try {
+    const listings = await getListings();
+    const listing = listings.find(l => l.id === id);
+    return listing || null;
+  } catch (error) {
+    console.error('Error fetching listing:', error);
+    return null;
+  }
 }

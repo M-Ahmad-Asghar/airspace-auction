@@ -3,6 +3,7 @@ import './globals.css';
 import { AuthProvider } from '@/components/AuthProvider';
 import { Toaster } from '@/components/ui/toaster';
 import { Footer } from '@/components/Footer';
+import ConditionalFooter from '@/components/ConditionalFooter';
 
 export const metadata: Metadata = {
   title: 'airplanedeals.com',
@@ -25,7 +26,7 @@ export default function RootLayout({
         <AuthProvider>
           <div className="flex-grow">{children}</div>
           <Toaster />
-          <Footer />
+          <ConditionalFooter />
         </AuthProvider>
       </body>
     </html>

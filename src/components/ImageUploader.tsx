@@ -74,8 +74,8 @@ export function ImageUploader({ onFilesChange, maxFiles = 4, existingImages = []
                             <Image
                                 src={url}
                                 alt={`Preview ${index}`}
-                                layout="fill"
-                                objectFit="cover"
+                                fill
+                                className="object-cover"
                                 className="rounded-md"
                                 unoptimized={typeof file !== 'string'}
                             />

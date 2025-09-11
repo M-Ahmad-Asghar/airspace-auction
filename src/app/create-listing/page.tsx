@@ -467,7 +467,7 @@ export default function CreateListingPage() {
                          {youtubeDetails && (
                             <div className="mt-4 flex gap-4 items-center rounded-lg border p-3">
                                 <div className="relative h-24 w-32 flex-shrink-0">
-                                <Image src={youtubeDetails.thumbnailUrl} alt={youtubeDetails.title} layout="fill" objectFit="cover" className="rounded-md" />
+                                <Image src={youtubeDetails.thumbnailUrl} alt={youtubeDetails.title} fill className="object-cover" className="rounded-md" />
                                 </div>
                                 <div>
                                 <p className="font-semibold">{youtubeDetails.title}</p>

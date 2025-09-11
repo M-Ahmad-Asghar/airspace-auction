@@ -1,4 +1,3 @@
-
 "use client";
 
 import Image from 'next/image';
@@ -34,9 +33,8 @@ export function ListingListItem({ listing }: ListingListItemProps) {
             <Image
               src={listing.imageUrl}
               alt={listing.title}
-              layout="fill"
-              objectFit="cover"
-              className="bg-muted md:rounded-l-2xl md:rounded-r-none rounded-t-2xl"
+              fill
+              className="object-cover bg-muted md:rounded-l-2xl md:rounded-r-none rounded-t-2xl"
               data-ai-hint={listing.imageHint}
             />
           </div>

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
-import { Header } from '@/components/Header';
+import { HeaderWrapper } from '@/components/HeaderWrapper';
 
 export default function MessagesLayout({
   children,
@@ -16,7 +16,7 @@ export default function MessagesLayout({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
+      <HeaderWrapper />
       <main className="pt-20">
         {children}
       </main>

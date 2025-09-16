@@ -23,6 +23,7 @@ import { CATEGORIES, AIRCRAFT_TYPES, AIRCRAFT_MANUFACTURERS, AIRCRAFT_MODELS } f
 import { Loader2 } from 'lucide-react';
 import { ManufacturerInput } from '@/components/ManufacturerInput';
 import { ModelInput } from '@/components/ModelInput';
+import { PriceExtensionInput } from '@/components/PriceExtensionInput';
 
 
 const formSchema = z.object({
@@ -31,7 +32,7 @@ const formSchema = z.object({
   images: z.any().refine(files => files?.length >= 1, 'Please upload at least one image.').refine(files => files?.length <= 4, 'You can upload a maximum of 4 images.'),
   location: z.string().min(3, 'Location is required.'),
   price: z.coerce.number().positive('Price must be a positive number.'),
-  registration: z.string().min(1, 'Registration is required.'),
+  priceExtension: z.string().optional(),  registration: z.string().min(1, 'Registration is required.'),
   year: z.coerce.number().int().min(1900, 'Year must be after 1900.').max(new Date().getFullYear() + 1, `Year can't be in the future.`),
   manufacturer: z.string().min(2, 'Manufacturer is required.'),
   model: z.string().min(1, 'Model is required.'),
@@ -301,7 +302,20 @@ export default function CreateListingPage() {
                       <FormMessage />
                     </FormItem>
                   )} />
-                  <FormField control={form.control} name="registration" render={({ field }) => (
+                  <FormField control={form.control} name="priceExtension" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Price Extension</FormLabel>
+                      <FormControl>
+                        <PriceExtensionInput
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Select or add price extension..."
+                          userId={user?.uid || ""}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />                  <FormField control={form.control} name="registration" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Registration</FormLabel>
                       <FormControl><Input placeholder="Enter here" {...field} /></FormControl>

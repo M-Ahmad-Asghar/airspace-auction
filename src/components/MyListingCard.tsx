@@ -25,7 +25,7 @@ interface MyListingCardProps {
     id: string;
     title: string;
     price: number;
-    images: string[];
+    priceExtension?: string;    images: string[];
     location: string;
     postedDate: string;
     status?: string;
@@ -305,7 +305,7 @@ export function MyListingCard({ listing, onDelete }: MyListingCardProps) {
         <div className="space-y-2 mb-3">
           <div className="flex items-center justify-between">
             <span className="text-xl font-bold text-green-600">
-              {formatPrice(listing.price)}
+              {formatPrice(listing.price)}{listing.priceExtension ? ` ${listing.priceExtension}` : ""}
             </span>
             <span className="text-sm text-gray-500">
               {formatDate(listing.postedDate)}

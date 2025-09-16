@@ -280,7 +280,7 @@ export function ListingDetailView({ listing }: { listing: DocumentData }) {
             <CardContent className="p-6">
               <div className="text-center mb-6">
                 <div className="text-4xl font-bold text-primary mb-2">
-                  {formatPrice(listing.price || 0)}
+                  {formatPrice(listing.price || 0)}{listing.priceExtension ? ` ${listing.priceExtension}` : ""}
                 </div>
                 <div className="text-sm text-muted-foreground">
                   {listing.category} • {listing.year || 'Year not specified'}

@@ -22,6 +22,7 @@ import { createEventListing, getListingById, updateListing } from '@/services/li
 import { CATEGORIES } from '@/lib/constants';
 import { Loader2, MapPin, Info, Calendar as CalendarIcon, ChevronDown } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
+import { PriceExtensionInput } from '@/components/PriceExtensionInput';
 import { cn } from '@/lib/utils';
 
 const eventFormSchema = z.object({
@@ -32,7 +33,7 @@ const eventFormSchema = z.object({
   location: z.string().min(3, 'Location is required.'),
   date: z.date({ required_error: "An event date is required." }),
   price: z.coerce.number().positive('Price must be a positive number.'),
-});
+  priceExtension: z.string().optional(),});
 
 export default function CreateEventListingPage() {
   const router = useRouter();
@@ -54,7 +55,7 @@ export default function CreateEventListingPage() {
       images: [],
       location: '',
       price: undefined,
-    },
+      priceExtension: "",    },
   });
 
   useEffect(() => {
@@ -242,7 +243,20 @@ export default function CreateEventListingPage() {
                         <FormMessage />
                         </FormItem>
                     )} />
-                </div>
+                    <FormField control={form.control} name="priceExtension" render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Price Extension</FormLabel>
+                        <FormControl>
+                            <PriceExtensionInput
+                              value={field.value}
+                              onChange={field.onChange}
+                              placeholder="Select or add price extension..."
+                              userId={user?.uid || ""}
+                            />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )} />                </div>
 
                 <div className="flex justify-end gap-4 pt-8 border-t">
                   <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>

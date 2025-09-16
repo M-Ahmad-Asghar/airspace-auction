@@ -17,7 +17,7 @@ interface ListingCardProps {
     id: string;
     title: string;
     price: number;
-    imageUrl: string;
+    priceExtension?: string;    imageUrl: string;
     imageHint: string;
     location: string;
     postedDate: string;
@@ -177,7 +177,7 @@ export function ListingCard({ listing }: ListingCardProps) {
           
           <div className="flex items-center justify-between mb-3">
             <span className="text-2xl font-bold text-green-600">
-              {formatPrice(listing.price)}
+              {formatPrice(listing.price)}{listing.priceExtension ? ` ${listing.priceExtension}` : ""}
             </span>
             
             <div className="flex items-center gap-1">

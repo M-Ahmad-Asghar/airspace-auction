@@ -19,6 +19,7 @@ import { createRealEstateListing, getListingById, updateListing } from '@/servic
 import { CATEGORIES } from '@/lib/constants';
 import { Loader2, MapPin, Info } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
+import { PriceExtensionInput } from '@/components/PriceExtensionInput';
 
 const realEstateFormSchema = z.object({
   category: z.string().min(1, 'Category is required.'),
@@ -26,7 +27,7 @@ const realEstateFormSchema = z.object({
   images: z.any().refine(files => files?.length >= 1, 'Please upload at least one image.').refine(files => files?.length <= 4, 'You can upload a maximum of 4 images.'),
   location: z.string().min(3, 'Location is required.'),
   price: z.coerce.number().positive('Price must be a positive number.'),
-  description: z.string().min(20, 'Description must be at least 20 characters.'),
+  priceExtension: z.string().optional(),  description: z.string().min(20, 'Description must be at least 20 characters.'),
   beds: z.coerce.number().int().positive('Number of beds is required.'),
   baths: z.coerce.number().int().positive('Number of baths is required.'),
   hangerIncluded: z.string().min(2, 'Hanger details are required.'),
@@ -51,7 +52,7 @@ export default function CreateRealEstateListingPage() {
       images: [],
       location: '',
       price: undefined,
-      description: '',
+      priceExtension: "",      description: '',
       beds: undefined,
       baths: undefined,
       hangerIncluded: '',
@@ -187,7 +188,20 @@ export default function CreateRealEstateListingPage() {
                         <FormMessage />
                         </FormItem>
                     )} />
-                     <FormField control={form.control} name="description" render={({ field }) => (
+                    <FormField control={form.control} name="priceExtension" render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Price Extension</FormLabel>
+                        <FormControl>
+                            <PriceExtensionInput
+                              value={field.value}
+                              onChange={field.onChange}
+                              placeholder="Select or add price extension..."
+                              userId={user?.uid || ""}
+                            />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )} />                     <FormField control={form.control} name="description" render={({ field }) => (
                         <FormItem>
                             <FormLabel>Description</FormLabel>
                             <FormControl>

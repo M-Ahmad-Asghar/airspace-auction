@@ -18,6 +18,7 @@ import { ImageUploader } from '@/components/ImageUploader';
 import { createPartListing, getListingById, updateListing } from '@/services/listingService';
 import { CATEGORIES, AIRCRAFT_MANUFACTURERS } from '@/lib/constants';
 import { ManufacturerInput } from '@/components/ManufacturerInput';
+import { PriceExtensionInput } from '@/components/PriceExtensionInput';
 import { Loader2, MapPin, Info } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -28,7 +29,7 @@ const partFormSchema = z.object({
   images: z.any().refine(files => files?.length >= 1, 'Please upload at least one image.').refine(files => files?.length <= 4, 'You can upload a maximum of 4 images.'),
   location: z.string().min(3, 'Location is required.'),
   price: z.coerce.number().positive('Price must be a positive number.'),
-  year: z.coerce.number().int().min(1900, 'Year must be after 1900.').max(new Date().getFullYear() + 1, `Year can't be in the future.`).optional(),
+  priceExtension: z.string().optional(),  year: z.coerce.number().int().min(1900, 'Year must be after 1900.').max(new Date().getFullYear() + 1, `Year can't be in the future.`).optional(),
   manufacturer: z.string().min(2, 'Manufacturer is required.'),
   hours: z.coerce.number().positive('Must be a positive number.').optional(),
 });
@@ -53,7 +54,7 @@ export default function CreatePartListingPage() {
       images: [],
       location: '',
       price: undefined,
-      manufacturer: '',
+      priceExtension: "",      manufacturer: '',
     },
   });
   
@@ -196,7 +197,20 @@ export default function CreatePartListingPage() {
                       <FormMessage />
                     </FormItem>
                   )} />
-                  <FormField control={form.control} name="year" render={({ field }) => (
+                  <FormField control={form.control} name="priceExtension" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Price Extension</FormLabel>
+                      <FormControl>
+                        <PriceExtensionInput
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Select or add price extension..."
+                          userId={user?.uid || ""}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />                  <FormField control={form.control} name="year" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Year</FormLabel>
                       <FormControl><Input type="number" placeholder="Add here" {...field} /></FormControl>

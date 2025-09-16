@@ -21,6 +21,7 @@ import { createAircraftListing, getListingById, updateListing } from '@/services
 import { getYoutubeVideoDetails, type YoutubeVideoDetails } from '@/services/youtubeService';
 import { CATEGORIES, AIRCRAFT_TYPES, AIRCRAFT_MANUFACTURERS, AIRCRAFT_MODELS } from '@/lib/constants';
 import { ManufacturerInput } from '@/components/ManufacturerInput';
+import { ModelInput } from '@/components/ModelInput';
 import { Loader2, AlertCircle, X } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
@@ -318,14 +319,15 @@ export default function CreateListingPage() {
                   <FormField control={form.control} name="model" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Model</FormLabel>
-                       <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger><SelectValue placeholder="Select a model" /></SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {AIRCRAFT_MODELS.map(model => <SelectItem key={model} value={model}>{model}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
+                      <FormControl>
+                        <ModelInput
+                          value={field.value}
+                          onChange={field.onChange}
+                          
+                          placeholder="Search or add model..."
+                          userId={user?.uid || ""}
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />

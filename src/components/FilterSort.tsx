@@ -9,7 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { AIRCRAFT_MANUFACTURERS, AIRCRAFT_MODELS, AIRCRAFT_TYPES } from '@/lib/constants';
+import { AIRCRAFT_MANUFACTURERS, AIRCRAFT_TYPES } from '@/lib/constants';
+import { ModelSelect } from '@/components/ModelSelect';
 import { Filter, Search } from 'lucide-react';
 
 export function FilterSort() {
@@ -135,12 +136,12 @@ export function FilterSort() {
           </div>
           <div>
             <Label htmlFor="model">Model</Label>
-            <Select value={model} onValueChange={setModel}>
-                <SelectTrigger id="model"><SelectValue placeholder="Select model" /></SelectTrigger>
-                <SelectContent>
-                    {AIRCRAFT_MODELS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-                </SelectContent>
-            </Select>
+            <ModelSelect
+              value={model}
+              onValueChange={setModel}
+              
+              placeholder="Select model"
+            />
           </div>
            <div>
             <Label>Airframe hr</Label>

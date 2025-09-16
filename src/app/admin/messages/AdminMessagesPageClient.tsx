@@ -357,7 +357,7 @@ export default function AdminMessagesPageClient({
               <h1 className="text-xl font-bold">Admin Messages</h1>
               <div className="flex items-center space-x-2">
                 <Button variant="ghost" size="icon" className="lg:hidden">
-                  <MessageSquare className="h-4 w-4" />
+                  <MessageSquare className="h-4 w-4  !size-4" />
                 </Button>
                 <Button variant="ghost" size="icon" className="lg:hidden">
                   <Search className="h-4 w-4" />
@@ -414,7 +414,7 @@ export default function AdminMessagesPageClient({
           <div className="flex-1 overflow-y-auto">
             {filteredConversations.length === 0 ? (
               <div className="p-4 text-center text-gray-500">
-                <MessageSquare className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <MessageSquare className="h-12 w-12 !size-12 mx-auto mb-4 text-gray-300" />
                 <p>No conversations found</p>
               </div>
             ) : (
@@ -577,13 +577,13 @@ export default function AdminMessagesPageClient({
                   ) : messages.length === 0 ? (
                     <div className="flex items-center justify-center py-8">
                       <div className="text-center">
-                        <MessageSquare className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                        <MessageSquare className="h-12 !size-12 w-12 mx-auto mb-4 text-gray-300" />
                         <p className="text-gray-500">No messages yet. Start the conversation!</p>
                       </div>
                     </div>
                   ) : (
                     <>
-                      {messages.map((message) => (
+                      {messages.map((message: any) => (
                         <div
                           key={message.id}
                           className={`flex ${message.senderId === user?.uid ? 'justify-end' : 'justify-start'}`}
@@ -684,7 +684,7 @@ export default function AdminMessagesPageClient({
           ) : (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center">
-                <MessageSquare className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+                <MessageSquare className="h-16 !size-16 w-16 mx-auto mb-4 text-gray-300" />
                 <h2 className="text-xl font-semibold text-gray-600 mb-2">No conversation selected</h2>
                 <p className="text-gray-500">Choose a conversation from the list to start chatting</p>
               </div>

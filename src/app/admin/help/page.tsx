@@ -197,7 +197,7 @@ export default function HelpPage() {
           <CardContent className="p-4">
             <div className="flex items-center space-x-3">
               <div className="p-2 bg-blue-100 rounded-lg">
-                <MessageSquare className="h-5 w-5 text-blue-600" />
+                <MessageSquare className="h-5 w-5  !size-5 text-blue-600" />
               </div>
               <div>
                 <h3 className="font-medium text-sm">Submit Ticket</h3>
@@ -279,7 +279,7 @@ export default function HelpPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
-            <MessageSquare className="h-5 w-5" />
+            <MessageSquare className="h-5 w-5  !size-5" />
             <span>Your Support Tickets</span>
           </CardTitle>
         </CardHeader>
@@ -316,7 +316,7 @@ export default function HelpPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
-              <MessageSquare className="h-5 w-5" />
+              <MessageSquare className="h-5 w-5 !size-5" />
               <span>Submit Support Ticket</span>
             </CardTitle>
           </CardHeader>

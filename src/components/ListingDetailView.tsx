@@ -425,7 +425,7 @@ export function ListingDetailView({ listing }: { listing: DocumentData }) {
             </CardHeader>
             <CardContent className="space-y-3">
               <Button className="w-full" size="lg">
-                <MessageSquare className="h-4 w-4 mr-2" />
+                <MessageSquare className="h-4 !size-4 w-4 mr-2" />
                 Contact Seller
               </Button>
               <Button variant="outline" className="w-full">

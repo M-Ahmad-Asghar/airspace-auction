@@ -190,7 +190,7 @@ export default function ReviewsPage() {
           <CardContent className="p-4">
             <div className="flex items-center space-x-3">
               <div className="p-2 bg-purple-100 rounded-lg">
-                <MessageSquare className="h-5 w-5 text-purple-600" />
+                <MessageSquare className="h-5 w-5 !size-5 text-purple-600" />
               </div>
               <div>
                 <h3 className="font-medium text-sm">This Month</h3>
@@ -205,7 +205,7 @@ export default function ReviewsPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
-            <MessageSquare className="h-5 w-5" />
+            <MessageSquare className="h-5 w-5 !size-5" />
             <span>Recent Reviews</span>
           </CardTitle>
         </CardHeader>

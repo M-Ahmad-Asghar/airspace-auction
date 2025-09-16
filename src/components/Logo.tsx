@@ -1,8 +1,7 @@
-import * as React from 'react';
-import Image from 'next/image';
 import { cn } from '@/lib/utils';
+import Image from 'next/image';
 
-export function Logo({ className, ...props }: React.ComponentProps<typeof Image>) {
+export function Logo({ className, ...props }: any) {
   return (
     <Image
       src="/airplanedeals.com.png"

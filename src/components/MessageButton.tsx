@@ -118,7 +118,7 @@ export function MessageButton({ listingId, adOwnerId, listingData }: MessageButt
       disabled={loading || !user || user.uid === adOwnerId}
       className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700"
     >
-      <MessageSquare className="h-4 w-4" />
+      <MessageSquare className="h-4 w-4 !size-4" />
       <span>{loading ? 'Starting...' : 'Send Message'}</span>
     </Button>
   );

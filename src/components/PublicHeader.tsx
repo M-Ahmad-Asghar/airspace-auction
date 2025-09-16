@@ -67,9 +67,7 @@ export function PublicHeader() {
                 Login
               </Link>
             </Button>
-            <Button variant="ghost" size="icon" className="hidden sm:inline-flex">
-                <MessageSquare />
-            </Button>
+         
           </div>
         </div>
       </div>

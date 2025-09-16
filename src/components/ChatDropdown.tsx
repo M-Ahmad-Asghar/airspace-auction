@@ -1,9 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,19 +10,19 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { 
-  MessageSquare, 
-  Search, 
-  MoreVertical,
+import { useAuth } from '@/hooks/useAuth';
+import { listenToUnreadCount, listenToUserConversations, type Conversation } from '@/services/messagingService';
+import type { Unsubscribe } from 'firebase/firestore';
+import {
   ArrowRight,
-  Clock,
-  CheckCircle,
-  Loader2
+  Loader2,
+  MessageSquare,
+  MoreVertical,
+  Search
 } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { getUserConversations, getUnreadMessageCount, listenToUserConversations, listenToUnreadCount, type Conversation } from '@/services/messagingService';
-import type { Unsubscribe } from 'firebase/firestore';
+import { useEffect, useRef, useState } from 'react';
 
 export function ChatDropdown() {
   const { user } = useAuth();
@@ -88,7 +86,7 @@ export function ChatDropdown() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="relative">
-          <MessageSquare className="h-5 w-5" />
+          <MessageSquare className="h-5 w-5 !size-5 !size-5" />
           {unreadCount > 0 && (
             <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs bg-red-500">
               {unreadCount > 9 ? '9+' : unreadCount}

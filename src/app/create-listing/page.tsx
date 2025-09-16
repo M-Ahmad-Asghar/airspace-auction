@@ -18,7 +18,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { ImageUploader } from '@/components/ImageUploader';
 import { createAircraftListing, getListingById, updateListing } from '@/services/listingService';
-import { getYoutubeVideoDetails, type YoutubeVideoDetails } from '@/services/youtubeService';
 import { CATEGORIES, AIRCRAFT_TYPES, AIRCRAFT_MANUFACTURERS, AIRCRAFT_MODELS } from '@/lib/constants';
 import { Loader2 } from 'lucide-react';
 import { ManufacturerInput } from '@/components/ManufacturerInput';
@@ -37,8 +36,7 @@ const formSchema = z.object({
   manufacturer: z.string().min(2, 'Manufacturer is required.'),
   model: z.string().min(1, 'Model is required.'),
   description: z.string().min(20, 'Description must be at least 20 characters.'),
-  totalAirframeTime: z.union([z.string(), z.number()]).transform((val) => {
-    if (val === "") throw new Error("Total airframe time is required");
+  totalAirframeTime: z.string().min(1, "Total airframe time is required").transform((val) => {
     const num = Number(val);
     if (isNaN(num)) throw new Error("Must be a valid number");
     return num;
@@ -65,8 +63,7 @@ const formSchema = z.object({
   interiorDetails: z.string().min(10, 'Interior details are required.'),
   inspectionStatus: z.string().min(5, 'Inspection status is required.'),
   ifr: z.string().min(3, 'IFR details are required.'),
-  youtubeLink: z.string().url('Must be a valid YouTube URL.').optional().or(z.literal('')),
-});
+  });
 
 export default function CreateListingPage() {
   const router = useRouter();
@@ -77,9 +74,7 @@ export default function CreateListingPage() {
   const { toast } = useToast();
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-  const [youtubeDetails, setYoutubeDetails] = useState<YoutubeVideoDetails | null>(null);
-  const [isFetchingYoutube, setIsFetchingYoutube] = useState(false);
-  const [existingImages, setExistingImages] = useState<string[]>([]);
+      const [existingImages, setExistingImages] = useState<string[]>([]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -106,8 +101,7 @@ export default function CreateListingPage() {
       interiorDetails: '',
       inspectionStatus: '',
       ifr: '',
-      youtubeLink: '',
-    },
+          },
   });
 
   useEffect(() => {
@@ -132,55 +126,15 @@ export default function CreateListingPage() {
   }, [isEditMode, listingId, form, toast, router, user]);
 
 
-  const youtubeLinkValue = useWatch({
-    control: form.control,
-    name: 'youtubeLink',
-  });
-
+  
   const extractVideoId = (url: string): string | null => {
       if (!url) return null;
-      const regex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
       const match = url.match(regex);
       return match ? match[1] : null;
   };
 
-  const fetchDetails = useCallback(async (link: string) => {
-    const videoId = extractVideoId(link);
-    if (videoId) {
-      setIsFetchingYoutube(true);
-      setYoutubeDetails(null);
-      try {
-        const details = await getYoutubeVideoDetails(videoId);
-        setYoutubeDetails(details);
-      } catch (error) {
-        console.error("Failed to fetch YouTube details", error);
-        setYoutubeDetails(null);
-        toast({
-          variant: 'destructive',
-          title: 'Invalid YouTube Link',
-          description: 'Could not fetch video details. Please check the URL.',
-        });
-      } finally {
-        setIsFetchingYoutube(false);
-      }
-    } else {
-      setYoutubeDetails(null);
-    }
-  }, [toast]);
-
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      const { isDirty } = form.getFieldState('youtubeLink');
-      if (youtubeLinkValue && isDirty) {
-        fetchDetails(youtubeLinkValue);
-      } else if (!youtubeLinkValue) {
-        setYoutubeDetails(null);
-      }
-    }, 1000);
-
-    return () => clearTimeout(handler);
-  }, [youtubeLinkValue, fetchDetails, form]);
-
+  
+  
 
   const handleFilesChange = (files: (File | string)[]) => {
     form.setValue('images', files, { shouldValidate: true });
@@ -480,25 +434,6 @@ export default function CreateListingPage() {
                         </FormItem>
                         )} />
                     </div>
-                    <FormField control={form.control} name="youtubeLink" render={({ field }) => (
-                      <FormItem className="md:col-span-2">
-                        <FormLabel>YouTube Link (Optional)</FormLabel>
-                        <FormControl><Input placeholder="https://youtube.com/watch?v=..." {...field} /></FormControl>
-                        <FormMessage />
-                         {isFetchingYoutube && <div className="flex items-center text-sm text-muted-foreground pt-2"><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Fetching video details...</div>}
-                         {youtubeDetails && (
-                            <div className="mt-4 flex gap-4 items-center rounded-lg border p-3">
-                                <div className="relative h-24 w-32 flex-shrink-0">
-                                <Image src={youtubeDetails.thumbnailUrl} alt={youtubeDetails.title} fill className="object-cover"  />
-                                </div>
-                                <div>
-                                <p className="font-semibold">{youtubeDetails.title}</p>
-                                <p className="text-sm text-muted-foreground">{youtubeDetails.author}</p>
-                                </div>
-                            </div>
-                        )}
-                      </FormItem>
-                    )} />
                   </div>
                 </div>
 

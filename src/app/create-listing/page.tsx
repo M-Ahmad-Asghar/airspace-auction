@@ -36,13 +36,26 @@ const formSchema = z.object({
   manufacturer: z.string().min(2, 'Manufacturer is required.'),
   model: z.string().min(1, 'Model is required.'),
   description: z.string().min(20, 'Description must be at least 20 characters.'),
-  totalAirframeTime: z.coerce.number().positive('Must be a positive number.'),
-  engineTimeMin: z.coerce.number().positive('Must be a positive number.').optional(),
-  engineTimeMax: z.coerce.number().positive('Must be a positive number.').optional(),
+  totalAirframeTime: z.union([z.string(), z.number()]).transform((val) => {
+    if (val === "") throw new Error("Total airframe time is required");
+    const num = Number(val);
+    if (isNaN(num)) throw new Error("Must be a valid number");
+    return num;
+}).refine((val) => val > 0, 'Must be a positive number.'),
+  engineTime: z.union([z.string(), z.number()]).optional().transform((val) => {
+    if (val === "" || val === undefined) return undefined;
+    const num = Number(val);
+    return isNaN(num) ? undefined : num;
+}).refine((val) => val === undefined || val > 0, 'Must be a positive number.'),
+  
   engineDetails: z.string().min(10, 'Engine details are required.'),
   propellerType: z.string().min(3, 'Propeller type is required.'),
-  propellerTimeMin: z.coerce.number().positive('Must be a positive number.').optional(),
-  propellerTimeMax: z.coerce.number().positive('Must be a positive number.').optional(),
+  propellerTime: z.union([z.string(), z.number()]).optional().transform((val) => {
+    if (val === "" || val === undefined) return undefined;
+    const num = Number(val);
+    return isNaN(num) ? undefined : num;
+}).refine((val) => val === undefined || val > 0, 'Must be a positive number.'),
+  
   propellerDetails: z.string().min(10, 'Propeller details are required.'),
   propellerSerials: z.string().min(3, 'Propeller serials are required.'),
   avionics: z.string().min(10, 'Avionics details are required.'),
@@ -80,7 +93,9 @@ export default function CreateListingPage() {
       manufacturer: '',
       model: '',
       description: '',
-      totalAirframeTime: undefined,
+      totalAirframeTime: "",
+      engineTime: "",
+      propellerTime: "",
       engineDetails: '',
       propellerType: '',
       propellerDetails: '',
@@ -354,13 +369,13 @@ export default function CreateListingPage() {
                       </FormItem>
                     )} />
                     
-                    <FormItem>
-                      <FormLabel>Engine Time</FormLabel>
-                      <div className="grid grid-cols-2 gap-4">
-                        <FormField control={form.control} name="engineTimeMin" render={({ field }) => (<FormItem><FormControl><Input type="number" placeholder="Minimum" {...field} /></FormControl><FormMessage/></FormItem>)} />
-                        <FormField control={form.control} name="engineTimeMax" render={({ field }) => (<FormItem><FormControl><Input type="number" placeholder="Maximum" {...field} /></FormControl><FormMessage/></FormItem>)} />
-                      </div>
-                    </FormItem>
+                    <FormField control={form.control} name="engineTime" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Engine Time</FormLabel>
+                        <FormControl><Input type="number" placeholder="Enter engine hours" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
                     <FormField control={form.control} name="engineDetails" render={({ field }) => (
                       <FormItem>
                         <FormLabel>Engine Details</FormLabel>
@@ -377,13 +392,13 @@ export default function CreateListingPage() {
                       </FormItem>
                     )} />
 
-                    <FormItem className="md:col-span-2">
-                      <FormLabel>Propeller Time</FormLabel>
-                      <div className="grid grid-cols-2 gap-4">
-                        <FormField control={form.control} name="propellerTimeMin" render={({ field }) => (<FormItem><FormControl><Input type="number" placeholder="Minimum" {...field} /></FormControl><FormMessage/></FormItem>)} />
-                        <FormField control={form.control} name="propellerTimeMax" render={({ field }) => (<FormItem><FormControl><Input type="number" placeholder="Maximum" {...field} /></FormControl><FormMessage/></FormItem>)} />
-                      </div>
-                    </FormItem>
+                    <FormField control={form.control} name="propellerTime" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Propeller Time</FormLabel>
+                        <FormControl><Input type="number" placeholder="Enter propeller hours" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
 
                     <div className="md:col-span-2">
                         <FormField control={form.control} name="propellerDetails" render={({ field }) => (

@@ -379,8 +379,7 @@ export default function CreateListingPage() {
                     <FormField control={form.control} name="engineDetails" render={({ field }) => (
                       <FormItem>
                         <FormLabel>Engine Details</FormLabel>
-                        <FormControl><Input placeholder="Enter here" {...field} /></FormControl>
-                        <FormMessage />
+                        <FormControl><Textarea placeholder="Enter engine details..." {...field} /></FormControl>                        <FormMessage />
                       </FormItem>
                     )} />
 
@@ -404,8 +403,7 @@ export default function CreateListingPage() {
                         <FormField control={form.control} name="propellerDetails" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Propeller Details</FormLabel>
-                                <FormControl><Input placeholder="Enter here" {...field} /></FormControl>
-                                <FormMessage />
+                                <FormControl><Textarea placeholder="Enter propeller details..." {...field} /></FormControl>                                <FormMessage />
                             </FormItem>
                         )} />
                     </div>
@@ -423,16 +421,14 @@ export default function CreateListingPage() {
                         <FormField control={form.control} name="avionics" render={({ field }) => (
                         <FormItem>
                             <FormLabel>Avionics</FormLabel>
-                            <FormControl><Textarea placeholder="Enter avionics details..." {...field} /></FormControl>
-                            <FormMessage />
+                            <FormControl><Textarea placeholder="Enter avionics details..." {...field} /></FormControl>                            <FormMessage />
                         </FormItem>
                         )} />                    </div>
                     <div className="md:col-span-2">
                         <FormField control={form.control} name="additional" render={({ field }) => (
                         <FormItem>
                             <FormLabel>Additional Information</FormLabel>
-                            <FormControl><Input placeholder="Enter here" {...field} /></FormControl>
-                            <FormMessage />
+                            <FormControl><Textarea placeholder="Enter additional information..." {...field} /></FormControl>                            <FormMessage />
                         </FormItem>
                         )} />
                     </div>
@@ -440,8 +436,7 @@ export default function CreateListingPage() {
                         <FormField control={form.control} name="exteriorDetails" render={({ field }) => (
                         <FormItem>
                             <FormLabel>Exterior Details</FormLabel>
-                            <FormControl><Input placeholder="Enter here" {...field} /></FormControl>
-                            <FormMessage />
+                            <FormControl><Textarea placeholder="Enter exterior details..." {...field} /></FormControl>                            <FormMessage />
                         </FormItem>
                         )} />
                     </div>
@@ -449,8 +444,7 @@ export default function CreateListingPage() {
                         <FormField control={form.control} name="interiorDetails" render={({ field }) => (
                         <FormItem>
                             <FormLabel>Interior Details</FormLabel>
-                            <FormControl><Input placeholder="Enter here" {...field} /></FormControl>
-                            <FormMessage />
+                            <FormControl><Textarea placeholder="Enter interior details..." {...field} /></FormControl>                            <FormMessage />
                         </FormItem>
                         )} />
                     </div>

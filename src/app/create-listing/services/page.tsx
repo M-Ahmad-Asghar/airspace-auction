@@ -19,7 +19,6 @@ import { createServiceListing, getListingById, updateListing } from '@/services/
 import { CATEGORIES } from '@/lib/constants';
 import { Loader2, MapPin, Info } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
 
 const serviceFormSchema = z.object({
   category: z.string().min(1, 'Category is required.'),
@@ -28,7 +27,6 @@ const serviceFormSchema = z.object({
   location: z.string().min(3, 'Location is required.'),
   price: z.coerce.number().positive('Price must be a positive number.'),
   description: z.string().min(20, 'Description must be at least 20 characters.'),
-  upgrade: z.boolean().default(false),
 });
 
 export default function CreateServiceListingPage() {
@@ -51,7 +49,6 @@ export default function CreateServiceListingPage() {
       location: '',
       price: undefined,
       description: '',
-      upgrade: false,
     },
   });
 
@@ -77,7 +74,11 @@ export default function CreateServiceListingPage() {
   }, [isEditMode, listingId, form, toast, router, user]);
 
   const handleFilesChange = (files: (File | string)[]) => {
-    form.setValue('images', files, { shouldValidate: true });
+    form.setValue('images', files);
+    // Trigger validation only for the images field
+    setTimeout(() => {
+      form.trigger('images');
+    }, 0);
   };
   const handleCategoryChange = (categoryName: string) => {
     // Don't redirect if we're in edit mode
@@ -162,28 +163,7 @@ export default function CreateServiceListingPage() {
                       </FormItem>
                     )}
                   />
-                </div>
-                 <FormField
-                    control={form.control}
-                    name="upgrade"
-                    render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm">
-                        <FormControl>
-                            <Checkbox
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                            />
-                        </FormControl>
-                        <div className="space-y-1 leading-none">
-                            <FormLabel>
-                            Upgrade to 20 images & add YouTube video for $25
-                            </FormLabel>
-                        </div>
-                        </FormItem>
-                    )}
-                />
-
-                <div className="space-y-8 pt-8 border-t">
+                </div>                <div className="space-y-8 pt-8 border-t">
                     <FormField control={form.control} name="title" render={({ field }) => (
                         <FormItem>
                             <FormLabel>Title</FormLabel>

@@ -4,7 +4,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import Image from 'next/image';
-import { ImagePlus, X, Lock } from 'lucide-react';
+import { ImagePlus, X } from 'lucide-react';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
 
@@ -92,7 +92,7 @@ export function ImageUploader({ onFilesChange, maxFiles = 4, existingImages = []
                             </Button>
                         </>
                     ) : (
-                        index === maxFiles-1 ? <Lock className="h-8 w-8 text-muted-foreground/50"/> : null
+                        null
                     )}
                 </div>
               )

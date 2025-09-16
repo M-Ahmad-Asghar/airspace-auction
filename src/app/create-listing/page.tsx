@@ -266,7 +266,6 @@ export default function CreateListingPage() {
                           <ImageUploader onFilesChange={handleFilesChange} maxFiles={4} existingImages={existingImages} />
                         </FormControl>
                         <FormMessage />
-                        <p className="text-sm text-muted-foreground pt-2">Upgrade to 20 images & add YouTube video for $25</p>
                       </FormItem>
                     )}
                   />

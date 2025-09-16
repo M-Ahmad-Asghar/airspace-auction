@@ -22,7 +22,6 @@ import { createEventListing, getListingById, updateListing } from '@/services/li
 import { CATEGORIES } from '@/lib/constants';
 import { Loader2, MapPin, Info, Calendar as CalendarIcon, ChevronDown } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 
 const eventFormSchema = z.object({
@@ -33,7 +32,6 @@ const eventFormSchema = z.object({
   location: z.string().min(3, 'Location is required.'),
   date: z.date({ required_error: "An event date is required." }),
   price: z.coerce.number().positive('Price must be a positive number.'),
-  upgrade: z.boolean().default(false),
 });
 
 export default function CreateEventListingPage() {
@@ -56,7 +54,6 @@ export default function CreateEventListingPage() {
       images: [],
       location: '',
       price: undefined,
-      upgrade: false,
     },
   });
 
@@ -82,7 +79,11 @@ export default function CreateEventListingPage() {
   }, [isEditMode, listingId, form, toast, router, user]);
 
   const handleFilesChange = (files: (File | string)[]) => {
-    form.setValue('images', files, { shouldValidate: true });
+    form.setValue('images', files);
+    // Trigger validation only for the images field
+    setTimeout(() => {
+      form.trigger('images');
+    }, 0);
   };
   const handleCategoryChange = (categoryName: string) => {
     // Don't redirect if we're in edit mode
@@ -167,28 +168,7 @@ export default function CreateEventListingPage() {
                       </FormItem>
                     )}
                   />
-                </div>
-                 <FormField
-                    control={form.control}
-                    name="upgrade"
-                    render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm">
-                        <FormControl>
-                            <Checkbox
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                            />
-                        </FormControl>
-                        <div className="space-y-1 leading-none">
-                            <FormLabel>
-                            Upgrade to 20 images & add YouTube video for $25
-                            </FormLabel>
-                        </div>
-                        </FormItem>
-                    )}
-                />
-
-                <div className="space-y-8 pt-8 border-t">
+                </div>                <div className="space-y-8 pt-8 border-t">
                     <FormField control={form.control} name="title" render={({ field }) => (
                         <FormItem>
                             <FormLabel>Title</FormLabel>

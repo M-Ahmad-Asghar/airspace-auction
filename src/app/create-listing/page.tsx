@@ -412,7 +412,7 @@ export default function CreateListingPage() {
                      <div className="md:col-span-2">
                         <FormField control={form.control} name="propellerSerials" render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Propeller Serials</FormLabel>
+                                <FormLabel>Propeller Serial</FormLabel>
                                 <FormControl><Input placeholder="Enter here" {...field} /></FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -423,11 +423,10 @@ export default function CreateListingPage() {
                         <FormField control={form.control} name="avionics" render={({ field }) => (
                         <FormItem>
                             <FormLabel>Avionics</FormLabel>
-                            <FormControl><Input placeholder="Enter here" {...field} /></FormControl>
+                            <FormControl><Textarea placeholder="Enter avionics details..." {...field} /></FormControl>
                             <FormMessage />
                         </FormItem>
-                        )} />
-                    </div>
+                        )} />                    </div>
                     <div className="md:col-span-2">
                         <FormField control={form.control} name="additional" render={({ field }) => (
                         <FormItem>

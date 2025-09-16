@@ -80,10 +80,6 @@ export default function CreateEventListingPage() {
 
   const handleFilesChange = (files: (File | string)[]) => {
     form.setValue('images', files);
-    // Trigger validation only for the images field
-    setTimeout(() => {
-      form.trigger('images');
-    }, 0);
   };
   const handleCategoryChange = (categoryName: string) => {
     // Don't redirect if we're in edit mode

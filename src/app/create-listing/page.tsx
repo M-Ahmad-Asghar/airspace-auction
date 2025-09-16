@@ -430,7 +430,7 @@ export default function CreateListingPage() {
                     <div className="md:col-span-2">
                         <FormField control={form.control} name="additional" render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Additional</FormLabel>
+                            <FormLabel>Additional Information</FormLabel>
                             <FormControl><Input placeholder="Enter here" {...field} /></FormControl>
                             <FormMessage />
                         </FormItem>

@@ -78,6 +78,19 @@ export default function CreatePlaceListingPage() {
   const handleFilesChange = (files: (File | string)[]) => {
     form.setValue('images', files, { shouldValidate: true });
   };
+  const handleCategoryChange = (categoryName: string) => {
+    // Don't redirect if we're in edit mode
+    if (isEditMode) {
+      form.setValue('category', categoryName);
+      return;
+    }
+
+    // Find the corresponding route for the selected category
+    const selectedCategory = CATEGORIES.find(cat => cat.name === categoryName);
+    if (selectedCategory) {
+      router.push(selectedCategory.href);
+    }
+  };
 
   async function onSubmit(values: z.infer<typeof placeFormSchema>) {
     if (!user) {
@@ -122,7 +135,7 @@ export default function CreatePlaceListingPage() {
                 <FormField control={form.control} name="category" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Category</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled>
+                    <Select onValueChange={handleCategoryChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger>
                       </FormControl>

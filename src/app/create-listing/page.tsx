@@ -170,6 +170,20 @@ export default function CreateListingPage() {
     form.setValue('images', files, { shouldValidate: true });
   };
 
+  const handleCategoryChange = (categoryName: string) => {
+    // Don't redirect if we're in edit mode
+    if (isEditMode) {
+      form.setValue('category', categoryName);
+      return;
+    }
+
+    // Find the corresponding route for the selected category
+    const selectedCategory = CATEGORIES.find(cat => cat.name === categoryName);
+    if (selectedCategory) {
+      router.push(selectedCategory.href);
+    }
+  };
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (!user) {
       toast({ variant: 'destructive', title: 'Not Authenticated', description: 'You must be logged in to create a listing.' });
@@ -214,7 +228,7 @@ export default function CreateListingPage() {
                   <FormField control={form.control} name="category" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Category</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value} disabled>
+                      <Select onValueChange={handleCategoryChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger>
                         </FormControl>
@@ -467,7 +481,7 @@ export default function CreateListingPage() {
                          {youtubeDetails && (
                             <div className="mt-4 flex gap-4 items-center rounded-lg border p-3">
                                 <div className="relative h-24 w-32 flex-shrink-0">
-                                <Image src={youtubeDetails.thumbnailUrl} alt={youtubeDetails.title} fill className="object-cover" className="rounded-md" />
+                                <Image src={youtubeDetails.thumbnailUrl} alt={youtubeDetails.title} fill className="object-cover"  />
                                 </div>
                                 <div>
                                 <p className="font-semibold">{youtubeDetails.title}</p>

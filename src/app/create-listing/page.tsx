@@ -20,10 +20,9 @@ import { ImageUploader } from '@/components/ImageUploader';
 import { createAircraftListing, getListingById, updateListing } from '@/services/listingService';
 import { getYoutubeVideoDetails, type YoutubeVideoDetails } from '@/services/youtubeService';
 import { CATEGORIES, AIRCRAFT_TYPES, AIRCRAFT_MANUFACTURERS, AIRCRAFT_MODELS } from '@/lib/constants';
+import { Loader2 } from 'lucide-react';
 import { ManufacturerInput } from '@/components/ManufacturerInput';
 import { ModelInput } from '@/components/ModelInput';
-import { Loader2, AlertCircle, X } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 
 const formSchema = z.object({
@@ -66,7 +65,6 @@ export default function CreateListingPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [youtubeDetails, setYoutubeDetails] = useState<YoutubeVideoDetails | null>(null);
   const [isFetchingYoutube, setIsFetchingYoutube] = useState(false);
-  const [showDescriptionInfo, setShowDescriptionInfo] = useState(true);
   const [existingImages, setExistingImages] = useState<string[]>([]);
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -323,7 +321,6 @@ export default function CreateListingPage() {
                         <ModelInput
                           value={field.value}
                           onChange={field.onChange}
-                          
                           placeholder="Search or add model..."
                           userId={user?.uid || ""}
                         />
@@ -338,20 +335,7 @@ export default function CreateListingPage() {
                     <FormItem>
                         <FormLabel>Description</FormLabel>
                         <FormControl>
-                          <div className="relative">
-                            <Textarea placeholder="Describe the aircraft..." {...field} className="min-h-[150px]" />
-                            {showDescriptionInfo && (
-                                <Alert className="absolute bottom-4 left-4 right-4 w-auto max-w-md bg-background/90 backdrop-blur-sm">
-                                    <AlertCircle className="h-4 w-4" />
-                                    <AlertDescription className="text-xs">
-                                    Just start typing or fill in the fields below. Our system will automatically organize your details.
-                                    </AlertDescription>
-                                    <button type="button" onClick={() => setShowDescriptionInfo(false)} className="absolute top-2 right-2 text-muted-foreground hover:text-foreground">
-                                        <X className="h-4 w-4"/>
-                                    </button>
-                                </Alert>
-                            )}
-                          </div>
+                          <Textarea placeholder="Describe the aircraft..." {...field} className="min-h-[150px]" />
                         </FormControl>
                         <FormMessage />
                     </FormItem>

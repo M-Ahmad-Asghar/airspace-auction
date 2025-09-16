@@ -17,6 +17,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { ImageUploader } from '@/components/ImageUploader';
 import { createPartListing, getListingById, updateListing } from '@/services/listingService';
 import { CATEGORIES, AIRCRAFT_MANUFACTURERS } from '@/lib/constants';
+import { ManufacturerInput } from '@/components/ManufacturerInput';
 import { Loader2, MapPin, Info } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -205,14 +206,14 @@ export default function CreatePartListingPage() {
                   <FormField control={form.control} name="manufacturer" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Manufacturer</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger><SelectValue placeholder="Select manufacturer(s)" /></SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {AIRCRAFT_MANUFACTURERS.map(manufacturer => <SelectItem key={manufacturer} value={manufacturer}>{manufacturer}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
+                      <FormControl>
+                        <ManufacturerInput
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Search or add manufacturer..."
+                          userId={user?.uid || ""}
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />

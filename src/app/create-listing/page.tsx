@@ -20,6 +20,7 @@ import { ImageUploader } from '@/components/ImageUploader';
 import { createAircraftListing, getListingById, updateListing } from '@/services/listingService';
 import { getYoutubeVideoDetails, type YoutubeVideoDetails } from '@/services/youtubeService';
 import { CATEGORIES, AIRCRAFT_TYPES, AIRCRAFT_MANUFACTURERS, AIRCRAFT_MODELS } from '@/lib/constants';
+import { ManufacturerInput } from '@/components/ManufacturerInput';
 import { Loader2, AlertCircle, X } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
@@ -303,14 +304,14 @@ export default function CreateListingPage() {
                   <FormField control={form.control} name="manufacturer" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Manufacturer</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger><SelectValue placeholder="Select manufacturer" /></SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {AIRCRAFT_MANUFACTURERS.map(manufacturer => <SelectItem key={manufacturer} value={manufacturer}>{manufacturer}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
+                      <FormControl>
+                        <ManufacturerInput
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Search or add manufacturer..."
+                          userId={user?.uid || ""}
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />

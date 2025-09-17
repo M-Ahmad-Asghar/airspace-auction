@@ -16,6 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { ImageUploader } from '@/components/ImageUploader';
 import { createPartListing, getListingById, updateListing } from '@/services/listingService';
+import { uploadImages } from '@/services/imageUploadService';
 import { CATEGORIES, AIRCRAFT_MANUFACTURERS } from '@/lib/constants';
 import { ManufacturerInput } from '@/components/ManufacturerInput';
 import { PriceExtensionInput } from '@/components/PriceExtensionInput';
@@ -106,11 +107,27 @@ export default function CreatePartListingPage() {
     setIsLoading(true);
 
     try {
+      // Upload images first if there are any
+      let processedValues = { ...values };
+      if (values.images && values.images.length > 0) {
+        console.log("Uploading images...");
+        const imageUrls = await uploadImages(values.images, user.uid);
+        processedValues.images = imageUrls;
+        console.log("Images uploaded successfully:", imageUrls);
+      }
+      
+      // Remove undefined values to prevent Firebase errors
+      Object.keys(processedValues).forEach(key => {
+        if (processedValues[key] === undefined) {
+          delete processedValues[key];
+        }
+      })
+      
       if (isEditMode && listingId) {
-        await updateListing(listingId, values, user.uid);
+        await updateListing(listingId, processedValues, user.uid);
         toast({ title: 'Success!', description: "Your listing has been updated." });
       } else {
-        await createPartListing(values, user.uid, user.displayName || user.email?.split("@")[0] || "Ad Owner", user.email);
+        await createPartListing(processedValues, user.uid, user.displayName || user.email?.split("@")[0] || "Ad Owner", user.email);
         toast({ title: 'Listing Created!', description: "Your new part listing has been successfully created." });
       }
       router.push('/my-listings');

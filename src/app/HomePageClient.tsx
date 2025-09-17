@@ -41,8 +41,27 @@ function formatListingData(listing: any) {
   let imageHint = '';
 
   if (listing.category === 'Aircraft') {
-    title = `${listing.year || 'Unknown'} ${listing.manufacturer || 'Unknown'} ${listing.model || 'Unknown'}`;
-    imageHint = `${listing.manufacturer || 'Unknown'} ${listing.model || 'Unknown'}`;
+    // Generate a more meaningful title for aircraft
+    const parts = [];
+    if (listing.year && listing.year !== '') parts.push(listing.year);
+    if (listing.manufacturer && listing.manufacturer !== '') parts.push(listing.manufacturer);
+    if (listing.model && listing.model !== '') parts.push(listing.model);
+    
+    if (parts.length > 0) {
+      title = parts.join(' ');
+    } else {
+      title = listing.title || 'Aircraft Listing';
+    }
+    // Generate a more meaningful image hint for aircraft
+    const hintParts = [];
+    if (listing.manufacturer && listing.manufacturer !== '') hintParts.push(listing.manufacturer);
+    if (listing.model && listing.model !== '') hintParts.push(listing.model);
+    
+    if (hintParts.length > 0) {
+      imageHint = hintParts.join(' ');
+    } else {
+      imageHint = 'aircraft';
+    }
   } else if (listing.category === 'Events') {
     title = listing.title || 'Event Listing';
     imageHint = 'event concert';

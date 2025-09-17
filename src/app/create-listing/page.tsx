@@ -18,6 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { ImageUploader } from '@/components/ImageUploader';
 import { createAircraftListing, getListingById, updateListing } from '@/services/listingService';
+import { uploadImages } from '@/services/imageUploadService';
 import { CATEGORIES, AIRCRAFT_TYPES, AIRCRAFT_MANUFACTURERS, AIRCRAFT_MODELS } from '@/lib/constants';
 import { Loader2 } from 'lucide-react';
 import { ManufacturerInput } from '@/components/ManufacturerInput';
@@ -164,11 +165,27 @@ export default function CreateListingPage() {
     setIsLoading(true);
     
     try {
+      // Upload images first if there are any
+      let processedValues = { ...values };
+      if (values.images && values.images.length > 0) {
+        console.log('Uploading images...');
+        const imageUrls = await uploadImages(values.images, user.uid);
+        processedValues.images = imageUrls;
+        console.log('Images uploaded successfully:', imageUrls);
+      }
+      
+      // Remove undefined values to prevent Firebase errors
+      Object.keys(processedValues).forEach(key => {
+        if (processedValues[key] === undefined) {
+          delete processedValues[key];
+        }
+      })
+      
       if (isEditMode && listingId) {
-        await updateListing(listingId, values, user.uid);
+        await updateListing(listingId, processedValues, user.uid);
         toast({ title: 'Success!', description: "Your listing has been updated." });
       } else {
-        await createAircraftListing(values, user.uid, user.displayName || user.email?.split('@')[0] || 'Ad Owner', user.email);
+        await createAircraftListing(processedValues, user.uid, user.displayName || user.email?.split('@')[0] || 'Ad Owner', user.email);
         toast({ title: 'Listing Created!', description: "Your new aircraft listing has been successfully created." });
       }
       router.push('/my-listings');

@@ -26,13 +26,14 @@ import { PriceExtensionInput } from '@/components/PriceExtensionInput';
 import { cn } from '@/lib/utils';
 
 const eventFormSchema = z.object({
-  category: z.string().min(1, 'Category is required.'),
-  title: z.string().min(5, 'Title must be at least 5 characters.'),
+  category: z.string().optional(),
+  type: z.string().min(1, 'Type is required.'),
+  title: z.string().optional(),
   description: z.string().min(20, 'Description must be at least 20 characters.'),
   images: z.any().refine(files => files?.length >= 1, 'Please upload at least one image.').refine(files => files?.length <= 4, 'You can upload a maximum of 4 images.'),
-  location: z.string().min(3, 'Location is required.'),
-  date: z.date({ required_error: "An event date is required." }),
-  price: z.coerce.number().positive('Price must be a positive number.'),
+  location: z.string().optional(),
+  date: z.date().optional(),
+  price: z.coerce.number().positive("Price must be a positive number.").optional(),
   priceExtension: z.string().optional(),});
 
 export default function CreateEventListingPage() {
@@ -51,6 +52,7 @@ export default function CreateEventListingPage() {
     defaultValues: {
       category: 'Events',
       title: '',
+      type: '',
       description: '',
       images: [],
       location: '',
@@ -170,6 +172,13 @@ export default function CreateEventListingPage() {
                         <FormItem>
                             <FormLabel>Title</FormLabel>
                             <FormControl><Input placeholder="e.g., Annual Airshow & Fly-In" {...field} /></FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )} />
+                     <FormField control={form.control} name="type" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Type</FormLabel>
+                            <FormControl><Input placeholder="e.g., Aircraft, Engine, Propeller" {...field} /></FormControl>
                             <FormMessage />
                         </FormItem>
                     )} />

@@ -22,15 +22,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { PriceExtensionInput } from '@/components/PriceExtensionInput';
 
 const realEstateFormSchema = z.object({
-  category: z.string().min(1, 'Category is required.'),
-  title: z.string().min(5, 'Title must be at least 5 characters.'),
+  category: z.string().optional(),
+  type: z.string().min(1, 'Type is required.'),
+  title: z.string().optional(),
   images: z.any().refine(files => files?.length >= 1, 'Please upload at least one image.').refine(files => files?.length <= 4, 'You can upload a maximum of 4 images.'),
-  location: z.string().min(3, 'Location is required.'),
-  price: z.coerce.number().positive('Price must be a positive number.'),
+  location: z.string().optional(),
+  price: z.coerce.number().positive("Price must be a positive number.").optional(),
   priceExtension: z.string().optional(),  description: z.string().min(20, 'Description must be at least 20 characters.'),
-  beds: z.coerce.number().int().positive('Number of beds is required.'),
-  baths: z.coerce.number().int().positive('Number of baths is required.'),
-  hangerIncluded: z.string().min(2, 'Hanger details are required.'),
+  beds: z.coerce.number().int().positive('Number of beds is required.').optional(),
+  baths: z.coerce.number().int().positive('Number of baths is required.').optional(),
+  hangerIncluded: z.string().optional(),
 });
 
 export default function CreateRealEstateListingPage() {
@@ -49,6 +50,7 @@ export default function CreateRealEstateListingPage() {
     defaultValues: {
       category: 'Real Estate',
       title: '',
+      type: '',
       images: [],
       location: '',
       price: undefined,
@@ -171,6 +173,13 @@ export default function CreateRealEstateListingPage() {
                         <FormItem>
                             <FormLabel>Title</FormLabel>
                             <FormControl><Input placeholder="e.g., Beautiful Home with Private Hangar" {...field} /></FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )} />
+                     <FormField control={form.control} name="type" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Type</FormLabel>
+                            <FormControl><Input placeholder="e.g., Aircraft, Engine, Propeller" {...field} /></FormControl>
                             <FormMessage />
                         </FormItem>
                     )} />

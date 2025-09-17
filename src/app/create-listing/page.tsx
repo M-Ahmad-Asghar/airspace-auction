@@ -26,43 +26,45 @@ import { PriceExtensionInput } from '@/components/PriceExtensionInput';
 
 
 const formSchema = z.object({
-  category: z.string().min(1, 'Category is required.'),
+  category: z.string().optional(),
+  type: z.string().min(1, 'Type is required.'),
   type: z.string().min(1, 'Type is required.'),
   images: z.any().refine(files => files?.length >= 1, 'Please upload at least one image.').refine(files => files?.length <= 4, 'You can upload a maximum of 4 images.'),
-  location: z.string().min(3, 'Location is required.'),
-  price: z.coerce.number().positive('Price must be a positive number.'),
-  priceExtension: z.string().optional(),  registration: z.string().min(1, 'Registration is required.'),
-  year: z.coerce.number().int().min(1900, 'Year must be after 1900.').max(new Date().getFullYear() + 1, `Year can't be in the future.`),
-  manufacturer: z.string().min(2, 'Manufacturer is required.'),
-  model: z.string().min(1, 'Model is required.'),
+  location: z.string().optional(),
+  price: z.coerce.number().positive("Price must be a positive number.").optional(),
+  priceExtension: z.string().optional(),  registration: z.string().optional(),
+  year: z.coerce.number().int().min(1900, "Year must be after 1900.").max(new Date().getFullYear() + 1, `Year can't be in the future.`).optional(),
+  manufacturer: z.string().optional(),
+  model: z.string().optional(),
   description: z.string().min(20, 'Description must be at least 20 characters.'),
-  totalAirframeTime: z.string().min(1, "Total airframe time is required").transform((val) => {
+  totalAirframeTime: z.string().optional().transform((val) => {
+    if (val === "" || val === undefined) return undefined;
     const num = Number(val);
-    if (isNaN(num)) throw new Error("Must be a valid number");
+    if (isNaN(num)) return undefined;
     return num;
-}).refine((val) => val > 0, 'Must be a positive number.'),
+}).refine((val) => val === undefined || val > 0, 'Must be a positive number.'),
   engineTime: z.union([z.string(), z.number()]).optional().transform((val) => {
     if (val === "" || val === undefined) return undefined;
     const num = Number(val);
     return isNaN(num) ? undefined : num;
 }).refine((val) => val === undefined || val > 0, 'Must be a positive number.'),
   
-  engineDetails: z.string().min(10, 'Engine details are required.'),
-  propellerType: z.string().min(3, 'Propeller type is required.'),
+  engineDetails: z.string().optional(),
+  propellerType: z.string().optional(),
   propellerTime: z.union([z.string(), z.number()]).optional().transform((val) => {
     if (val === "" || val === undefined) return undefined;
     const num = Number(val);
     return isNaN(num) ? undefined : num;
 }).refine((val) => val === undefined || val > 0, 'Must be a positive number.'),
   
-  propellerDetails: z.string().min(10, 'Propeller details are required.'),
-  propellerSerials: z.string().min(3, 'Propeller serials are required.'),
-  avionics: z.string().min(10, 'Avionics details are required.'),
+  propellerDetails: z.string().optional(),
+  propellerSerials: z.string().optional(),
+  avionics: z.string().optional(),
   additional: z.string().optional(),
-  exteriorDetails: z.string().min(10, 'Exterior details are required.'),
-  interiorDetails: z.string().min(10, 'Interior details are required.'),
-  inspectionStatus: z.string().min(5, 'Inspection status is required.'),
-  ifr: z.string().min(3, 'IFR details are required.'),
+  exteriorDetails: z.string().optional(),
+  interiorDetails: z.string().optional(),
+  inspectionStatus: z.string().optional(),
+  ifr: z.string().optional(),
   });
 
 export default function CreateListingPage() {

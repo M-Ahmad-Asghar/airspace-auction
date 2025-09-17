@@ -22,11 +22,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { PriceExtensionInput } from '@/components/PriceExtensionInput';
 
 const serviceFormSchema = z.object({
-  category: z.string().min(1, 'Category is required.'),
-  title: z.string().min(5, 'Title must be at least 5 characters.'),
+  category: z.string().optional(),
+  type: z.string().min(1, 'Type is required.'),
+  title: z.string().optional(),
   images: z.any().refine(files => files?.length >= 1, 'Please upload at least one image.').refine(files => files?.length <= 4, 'You can upload a maximum of 4 images.'),
-  location: z.string().min(3, 'Location is required.'),
-  price: z.coerce.number().positive('Price must be a positive number.'),
+  location: z.string().optional(),
+  price: z.coerce.number().positive("Price must be a positive number.").optional(),
   priceExtension: z.string().optional(),  description: z.string().min(20, 'Description must be at least 20 characters.'),
 });
 
@@ -46,6 +47,7 @@ export default function CreateServiceListingPage() {
     defaultValues: {
       category: 'Services',
       title: '',
+      type: '',
       images: [],
       location: '',
       price: undefined,
@@ -165,6 +167,13 @@ export default function CreateServiceListingPage() {
                         <FormItem>
                             <FormLabel>Title</FormLabel>
                             <FormControl><Input placeholder="e.g., Aircraft Detailing Services" {...field} /></FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )} />
+                     <FormField control={form.control} name="type" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Type</FormLabel>
+                            <FormControl><Input placeholder="e.g., Aircraft, Engine, Propeller" {...field} /></FormControl>
                             <FormMessage />
                         </FormItem>
                     )} />

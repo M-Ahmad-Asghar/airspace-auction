@@ -43,16 +43,6 @@ export default function ConversationPage() {
 
   const conversationId = params.id as string;
 
-  useEffect(() => {
-    if (conversationId && user) {
-      fetchMessages();
-      markMessagesAsRead(conversationId, user.uid);
-    }
-  }, [conversationId, user]);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
 
   const fetchMessages = async () => {
     if (!conversationId) return;
@@ -137,7 +127,11 @@ export default function ConversationPage() {
   };
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  };
+
+  const scrollToBottomImmediate = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'auto', block: 'end' });
   };
 
   const formatTime = (date: Date) => {

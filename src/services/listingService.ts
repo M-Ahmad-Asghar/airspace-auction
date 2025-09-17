@@ -108,6 +108,24 @@ export async function getListings(filters: SearchFilters = {}): Promise<Document
       listings = listings.filter(listing => (listing.engineTimeMax || 0) <= filters.engineHrMax!);
     }
 
+    // Client-side search filtering for better results
+    if (filters.searchTerm) {
+      const searchTerm = filters.searchTerm.toLowerCase();
+      listings = listings.filter(listing => {
+        const title = (listing.title || '').toLowerCase();
+        const description = (listing.description || '').toLowerCase();
+        const manufacturer = (listing.manufacturer || '').toLowerCase();
+        const model = (listing.model || '').toLowerCase();
+        const type = (listing.type || '').toLowerCase();
+        
+        return title.includes(searchTerm) || 
+               description.includes(searchTerm) || 
+               manufacturer.includes(searchTerm) || 
+               model.includes(searchTerm) || 
+               type.includes(searchTerm);
+      });
+    }
+
     // Sort by creation date (newest first)
     listings.sort((a, b) => {
       const aTime = a.createdAt?.seconds || 0;

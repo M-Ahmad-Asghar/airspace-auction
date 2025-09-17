@@ -426,14 +426,11 @@ export function ListingDetailView({ listing }: { listing: DocumentData }) {
               <CardTitle className="text-lg">Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Button className="w-full" size="lg">
-                <MessageSquare className="h-4 !size-4 w-4 mr-2" />
-                Contact Seller
-              </Button>
-              <Button variant="outline" className="w-full">
-                <ExternalLink className="h-4 w-4 mr-2" />
-                View Full Details
-              </Button>
+              <MessageButton 
+                listingId={listing.id}
+                adOwnerId={listing.userId}
+                listingData={listing}
+              />
             </CardContent>
           </Card>
 

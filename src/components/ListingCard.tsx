@@ -1,16 +1,16 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
-import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Heart, Eye, Share2, Star } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
-import { addToWishlist, removeFromWishlist, isInWishlist } from '@/services/wishlistService';
+import { Card } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import { addToWishlist, isInWishlist, removeFromWishlist } from '@/services/wishlistService';
 import { formatDistanceToNow } from 'date-fns';
+import { Eye, Heart, Share2, Star } from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
+import React, { useEffect, useState } from 'react';
 
 interface ListingCardProps {
   listing: {
@@ -148,11 +148,6 @@ export function ListingCard({ listing }: ListingCardProps) {
             </Badge>
           </div>
 
-          {/* Views Count */}
-          <div className="absolute bottom-3 left-3 flex items-center gap-1 bg-black/50 text-white px-2 py-1 rounded-full text-xs">
-            <Eye className="h-3 w-3" />
-            <span>{listing.views}</span>
-          </div>
 
           {/* Wishlist Button */}
           <div className="absolute top-3 right-3">
@@ -191,9 +186,9 @@ export function ListingCard({ listing }: ListingCardProps) {
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center text-xs font-semibold text-blue-600">
-                {listing.userName.charAt(0)}
+                {listing.userName ? listing.userName.charAt(0) : 'U'}
               </div>
-              <span className="truncate">{listing.userName}</span>
+              <span className="truncate">{listing.userName || 'Ad Owner'}</span>
             </div>
             
             <div className="flex items-center justify-between text-sm text-gray-500">
@@ -207,7 +202,7 @@ export function ListingCard({ listing }: ListingCardProps) {
                 <span>{listing.views}</span>
               </div>
               <div className="flex items-center gap-1">
-                <Share2 className="h-3 w-3" />
+                <Share2  className="h-3 w-3" />
                 <span>{listing.shares}</span>
               </div>
             </div>

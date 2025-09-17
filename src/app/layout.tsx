@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { AuthProvider } from '@/components/AuthProvider';
 import { Toaster } from '@/components/ui/toaster';
+
 import { Footer } from '@/components/Footer';
 import ConditionalFooter from '@/components/ConditionalFooter';
 
@@ -24,6 +25,7 @@ export default function RootLayout({
       </head>
       <body className="font-sans antialiased flex flex-col min-h-screen" suppressHydrationWarning={true}>
         <AuthProvider>
+          
           <div className="flex-grow">{children}</div>
           <Toaster />
           <ConditionalFooter />

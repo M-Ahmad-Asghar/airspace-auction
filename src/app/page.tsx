@@ -22,7 +22,7 @@ function formatListingData(listing: DocumentData) {
     imageUrl: listing.imageUrls?.[0] || `https://placehold.co/600x450.png`,
     location: listing.location || 'Unknown Location',
     postedDate: postDateStr,
-    userName: listing.userName || 'Unknown User',
+    userName: listing.userName && listing.userName !== 'Current User' && listing.userName !== 'Ad Owner' ? listing.userName : null,
     userAvatarUrl: listing.userAvatarUrl || 'https://placehold.co/40x40.png',
     rating: listing.averageRating,
     ratingCount: listing.ratingCount,

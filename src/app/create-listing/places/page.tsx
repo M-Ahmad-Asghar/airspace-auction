@@ -103,7 +103,7 @@ export default function CreatePlaceListingPage() {
         await updateListing(listingId, values, user.uid);
         toast({ title: 'Success!', description: "Your listing has been updated." });
       } else {
-        await createPlaceListing(values, user.uid);
+        await createPlaceListing(values, user.uid, user.displayName || user.email?.split("@")[0] || "Ad Owner", user.email);
         toast({ title: 'Listing Created!', description: "Your new place listing has been successfully created." });
       }
       router.push('/my-listings');

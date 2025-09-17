@@ -168,7 +168,7 @@ export default function CreateListingPage() {
         await updateListing(listingId, values, user.uid);
         toast({ title: 'Success!', description: "Your listing has been updated." });
       } else {
-        await createAircraftListing(values, user.uid);
+        await createAircraftListing(values, user.uid, user.displayName || user.email?.split('@')[0] || 'Ad Owner', user.email);
         toast({ title: 'Listing Created!', description: "Your new aircraft listing has been successfully created." });
       }
       router.push('/my-listings');

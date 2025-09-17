@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { convertUrlsToLinks } from '@/lib/linkUtils';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
@@ -338,7 +339,7 @@ export function ListingDetailView({ listing }: { listing: DocumentData }) {
                   <AvatarFallback>{listing.userName?.charAt(0) || 'U'}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <h3 className="font-semibold">{listing.userName || 'Unknown Seller'}</h3>
+                  <h3 className="font-semibold">{listing.userName || 'Ad Owner'}</h3>
                   <div className="flex items-center gap-1 text-sm text-muted-foreground">
                     <Star className="h-4 w-4 text-yellow-400 fill-current" />
                     <span>{listing.averageRating?.toFixed(1) || '5.0'}</span>

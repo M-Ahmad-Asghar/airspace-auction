@@ -23,7 +23,7 @@ function formatListingData(listing: any) {
     imageUrl: listing.imageUrls?.[0] || `https://placehold.co/600x450.png`,
     location: listing.location || 'Unknown Location',
     postedDate: listing.createdAt || new Date().toISOString(),
-    userName: 'Joseph Andrew', // Placeholder
+    userName: listing.userName userName: listing.userName && listing.userName !== 'Current User' && listing.userName !== 'Ad Owner' ? listing.userName : null,userName: listing.userName && listing.userName !== 'Current User' && listing.userName !== 'Ad Owner' ? listing.userName : null, listing.userName !== 'Current User' userName: listing.userName && listing.userName !== 'Current User' && listing.userName !== 'Ad Owner' ? listing.userName : null,userName: listing.userName && listing.userName !== 'Current User' && listing.userName !== 'Ad Owner' ? listing.userName : null, listing.userName !== 'Ad Owner' ? listing.userName : null,
     userAvatarUrl: 'https://placehold.co/40x40.png', // Placeholder
     rating: 5.0, // Placeholder
     ratingCount: 145, // Placeholder

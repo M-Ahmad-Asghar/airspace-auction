@@ -240,7 +240,7 @@ export async function getSimilarListings(listingId: string, category: string, li
   }
 }
 
-export async function createAircraftListing(data: any, userId: string): Promise<string> {
+export async function createAircraftListing(data: any, userId: string, userName?: string, userEmail?: string): Promise<string> {
   try {
     if (!db) {
       throw new Error('Firebase not initialized');
@@ -251,8 +251,8 @@ export async function createAircraftListing(data: any, userId: string): Promise<
     const listingData = {
       ...data,
       userId,
-      userName: 'Current User', // Will be updated with real user data
-      userEmail: 'user@example.com', // Will be updated with real user data
+      userName: userName || 'Ad Owner',
+      userEmail: userEmail || 'adowner@example.com',
       views: 0,
       shares: 0,
       averageRating: 0,
@@ -269,7 +269,7 @@ export async function createAircraftListing(data: any, userId: string): Promise<
   }
 }
 
-export async function createRealEstateListing(data: any, userId: string): Promise<string> {
+export async function createRealEstateListing(data: any, userId: string, userName?: string, userEmail?: string): Promise<string> {
   try {
     if (!db) {
       throw new Error('Firebase not initialized');
@@ -280,8 +280,8 @@ export async function createRealEstateListing(data: any, userId: string): Promis
     const listingData = {
       ...data,
       userId,
-      userName: 'Current User', // Will be updated with real user data
-      userEmail: 'user@example.com', // Will be updated with real user data
+      userName: userName || 'Ad Owner',
+      userEmail: userEmail || 'adowner@example.com',
       views: 0,
       shares: 0,
       averageRating: 0,
@@ -298,7 +298,7 @@ export async function createRealEstateListing(data: any, userId: string): Promis
   }
 }
 
-export async function createEventListing(data: any, userId: string): Promise<string> {
+export async function createEventListing(data: any, userId: string, userName?: string, userEmail?: string): Promise<string> {
   try {
     if (!db) {
       throw new Error('Firebase not initialized');
@@ -309,8 +309,8 @@ export async function createEventListing(data: any, userId: string): Promise<str
     const listingData = {
       ...data,
       userId,
-      userName: 'Current User', // Will be updated with real user data
-      userEmail: 'user@example.com', // Will be updated with real user data
+      userName: userName || 'Ad Owner',
+      userEmail: userEmail || 'adowner@example.com',
       views: 0,
       shares: 0,
       averageRating: 0,
@@ -327,7 +327,7 @@ export async function createEventListing(data: any, userId: string): Promise<str
   }
 }
 
-export async function createPartListing(data: any, userId: string): Promise<string> {
+export async function createPartListing(data: any, userId: string, userName?: string, userEmail?: string): Promise<string> {
   try {
     if (!db) {
       throw new Error('Firebase not initialized');
@@ -338,8 +338,8 @@ export async function createPartListing(data: any, userId: string): Promise<stri
     const listingData = {
       ...data,
       userId,
-      userName: 'Current User', // Will be updated with real user data
-      userEmail: 'user@example.com', // Will be updated with real user data
+      userName: userName || 'Ad Owner',
+      userEmail: userEmail || 'adowner@example.com',
       views: 0,
       shares: 0,
       averageRating: 0,
@@ -356,7 +356,7 @@ export async function createPartListing(data: any, userId: string): Promise<stri
   }
 }
 
-export async function createServiceListing(data: any, userId: string): Promise<string> {
+export async function createServiceListing(data: any, userId: string, userName?: string, userEmail?: string): Promise<string> {
   try {
     if (!db) {
       throw new Error('Firebase not initialized');
@@ -367,8 +367,8 @@ export async function createServiceListing(data: any, userId: string): Promise<s
     const listingData = {
       ...data,
       userId,
-      userName: 'Current User', // Will be updated with real user data
-      userEmail: 'user@example.com', // Will be updated with real user data
+      userName: userName || 'Ad Owner',
+      userEmail: userEmail || 'adowner@example.com',
       views: 0,
       shares: 0,
       averageRating: 0,
@@ -385,7 +385,7 @@ export async function createServiceListing(data: any, userId: string): Promise<s
   }
 }
 
-export async function createPlaceListing(data: any, userId: string): Promise<string> {
+export async function createPlaceListing(data: any, userId: string, userName?: string, userEmail?: string): Promise<string> {
   try {
     if (!db) {
       throw new Error('Firebase not initialized');
@@ -396,8 +396,8 @@ export async function createPlaceListing(data: any, userId: string): Promise<str
     const listingData = {
       ...data,
       userId,
-      userName: 'Current User', // Will be updated with real user data
-      userEmail: 'user@example.com', // Will be updated with real user data
+      userName: userName || 'Ad Owner',
+      userEmail: userEmail || 'adowner@example.com',
       views: 0,
       shares: 0,
       averageRating: 0,

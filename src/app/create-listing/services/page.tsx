@@ -105,7 +105,7 @@ export default function CreateServiceListingPage() {
         await updateListing(listingId, values, user.uid);
         toast({ title: 'Success!', description: "Your listing has been updated." });
       } else {
-        await createServiceListing(values, user.uid);
+        await createServiceListing(values, user.uid, user.displayName || user.email?.split("@")[0] || "Ad Owner", user.email);
         toast({ title: 'Listing Created!', description: "Your new service listing has been successfully created." });
       }
       router.push('/my-listings');

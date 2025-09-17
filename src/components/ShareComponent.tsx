@@ -190,7 +190,7 @@ export function ShareComponent({ listing, className = '' }: ShareComponentProps)
       <Button
         variant="outline"
         size="icon"
-        onClick={() => setShowShareMenu(!showShareMenu)}
+        onClick={(e) => { e.stopPropagation(); e.preventDefault(); setShowShareMenu(!showShareMenu); }}
         className="relative"
       >
         <Share2 className="h-4 w-4" />
@@ -309,7 +309,7 @@ export function ShareButton({ listing, className = '' }: ShareComponentProps) {
     <Button
       variant="outline"
       size="icon"
-      onClick={handleQuickShare}
+      onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleQuickShare(); }}
       className={className}
     >
       {copied ? (

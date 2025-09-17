@@ -110,7 +110,7 @@ export default function CreateEventListingPage() {
         await updateListing(listingId, values, user.uid);
         toast({ title: 'Success!', description: "Your listing has been updated." });
       } else {
-        await createEventListing(values, user.uid);
+        await createEventListing(values, user.uid, user.displayName || user.email?.split("@")[0] || "Ad Owner", user.email);
         toast({ title: 'Listing Created!', description: "Your new event listing has been successfully created." });
       }
       router.push('/my-listings');

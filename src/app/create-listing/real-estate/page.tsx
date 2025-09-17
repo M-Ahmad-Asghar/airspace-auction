@@ -111,7 +111,7 @@ export default function CreateRealEstateListingPage() {
         await updateListing(listingId, values, user.uid);
         toast({ title: 'Success!', description: "Your listing has been updated." });
       } else {
-        await createRealEstateListing(values, user.uid);
+        await createRealEstateListing(values, user.uid, user.displayName || user.email?.split("@")[0] || "Ad Owner", user.email);
         toast({ title: 'Listing Created!', description: "Your new real estate listing has been successfully created." });
       }
       router.push('/my-listings');

@@ -340,12 +340,13 @@ export function ListingDetailView({ listing }: { listing: DocumentData }) {
                 </Avatar>
                 <div>
                   <h3 className="font-semibold">{listing.userName || 'Ad Owner'}</h3>
+                  {listing.totalRatings > 0 ? (
                   <div className="flex items-center gap-1 text-sm text-muted-foreground">
                     <Star className="h-4 w-4 text-yellow-400 fill-current" />
                     <span>{listing.averageRating?.toFixed(1) || '5.0'}</span>
                     <span>({listing.totalRatings || 0} reviews)</span>
                   </div>
-                </div>
+                ) : null}                </div>
               </div>
 
               <div className="space-y-2">

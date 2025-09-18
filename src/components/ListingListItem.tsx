@@ -5,9 +5,11 @@ import Link from 'next/link';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Bookmark, Heart, MapPin, Camera, Star } from 'lucide-react';
+import { Bookmark, Heart, MapPin, Camera, Star, Trash2 } from 'lucide-react';
 
 interface ListingListItemProps {
+  onDelete?: (id: string) => void;
+  showDeleteButton?: boolean;
   index?: number;
   listing: {
     id: string;
@@ -25,7 +27,7 @@ interface ListingListItemProps {
   };
 }
 
-export function ListingListItem({ listing, index = 0 }: ListingListItemProps) {
+export function ListingListItem({ listing, index = 0, onDelete, showDeleteButton = false }: ListingListItemProps) {
   return (
     <Link href={`/listing/${listing.id}`} className="block">
       <Card className="overflow-hidden transition-shadow duration-300 hover:shadow-xl rounded-2xl border group flex flex-col md:flex-row">
@@ -59,7 +61,7 @@ export function ListingListItem({ listing, index = 0 }: ListingListItemProps) {
                         <span>{listing.imageCount} Images</span>
                     </div>
                 </div>
-                <p className="text-sm text-muted-foreground mt-3 line-clamp-3">{listing.description}</p>
+                <p className="text-sm text-muted-foreground mt-3 line-clamp-3 whitespace-pre-wrap">{listing.description}</p>
             </div>
             <div className="flex justify-between items-center mt-4 pt-4 border-t">
                 <div className="flex items-center gap-3">
@@ -76,8 +78,8 @@ export function ListingListItem({ listing, index = 0 }: ListingListItemProps) {
                         </div>
                     </div>
                 </div>
-                <Button variant="ghost" size="icon">
-                    <Bookmark className="h-6 w-6 text-muted-foreground" />
+                <Button variant="ghost" size="icon" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete?.(listing.id); }} className="text-red-500 hover:text-red-700 hover:bg-red-50">
+                    {showDeleteButton ? <Trash2 className="h-6 w-6" /> : <Bookmark className="h-6 w-6 text-muted-foreground" />}
                 </Button>
             </div>
         </div>

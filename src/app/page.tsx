@@ -51,7 +51,7 @@ function formatListingData(listing: DocumentData) {
     if (parts.length > 0) {
       title = parts.join(' ');
     } else {
-      title = listing.title || 'Aircraft Listing';
+      title = listing.title || listing.description || 'Aircraft Listing';
     }
     // Generate a more meaningful image hint for aircraft
     const hintParts = [];
@@ -64,20 +64,21 @@ function formatListingData(listing: DocumentData) {
       imageHint = 'aircraft';
     }
   } else if (listing.category === 'Events') {
-    title = listing.title || 'Event Listing';
+    title = listing.title || listing.description || 'Event Listing';
     imageHint = 'event concert';
   } else if (listing.category === 'Real Estate') {
-    title = listing.title || 'Real Estate Listing';
+    title = listing.title || listing.description || 'Real Estate Listing';
     imageHint = 'real estate house';
   } else if (listing.category === 'Places') {
-    title = listing.title || 'Place Listing';
+    title = listing.title || listing.description || 'Place Listing';
     imageHint = 'travel destination';
   } else if (listing.category === 'Services') {
-    title = listing.title || 'Service Listing';
+    title = listing.title || listing.description || 'Service Listing';
     imageHint = 'professional service';
   } else {
     // Default for Parts and others
-    title = listing.title || `${listing.manufacturer || 'Unknown'} Part`;
+    title = listing.title || listing.description || `${listing.manufacturer || ''} Part`.trim();
+    if (!title) title = 'Listing';
     imageHint = `${listing.manufacturer || 'Unknown'} part`;
   }
   

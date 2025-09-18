@@ -55,16 +55,16 @@ function formatListingData(listing: DocumentData) {
     title = `${listing.year || 'Unknown'} ${listing.manufacturer || 'Unknown'} ${listing.model || 'Unknown'}`;
     imageHint = `${listing.manufacturer || 'Unknown'} ${listing.model || 'Unknown'}`;
   } else if (listing.category === 'Events') {
-    title = listing.title || 'Event Listing';
+    title = listing.title || listing.description || 'Event Listing';
     imageHint = 'event concert';
   } else if (listing.category === 'Real Estate') {
-    title = listing.title || 'Real Estate Listing';
+    title = listing.title || listing.description || 'Real Estate Listing';
     imageHint = 'real estate house';
   } else if (listing.category === 'Places') {
-    title = listing.title || 'Place Listing';
+    title = listing.title || listing.description || 'Place Listing';
     imageHint = 'travel destination';
   } else if (listing.category === 'Services') {
-    title = listing.title || 'Service Listing';
+    title = listing.title || listing.description || 'Service Listing';
     imageHint = 'service professional';
   } else if (listing.category === 'Parts') {
     title = listing.title || 'Parts Listing';

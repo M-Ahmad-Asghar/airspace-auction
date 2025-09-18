@@ -398,7 +398,7 @@ export function ListingDetailView({ listing }: { listing: DocumentData }) {
               {/* Description */}
               <div className="mb-6">
                 <h3 className="font-semibold mb-2">Description</h3>
-                <p className="text-muted-foreground leading-relaxed">
+                <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
                   {listing.description || 'No description provided.'}
                 </p>
               </div>

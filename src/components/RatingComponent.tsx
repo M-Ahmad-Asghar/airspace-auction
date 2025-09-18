@@ -252,7 +252,7 @@ export function RatingComponent({ listingId, listingTitle }: RatingComponentProp
                 </div>
               </div>
               {userRating.comment && (
-                <p className="text-sm text-gray-600 italic">"{userRating.comment}"</p>
+                <p className="text-sm text-gray-600 italic whitespace-pre-wrap">"{userRating.comment}"</p>
               )}
             </div>
           )}
@@ -350,7 +350,7 @@ export function RatingComponent({ listingId, listingTitle }: RatingComponentProp
                       </div>
                       
                       {rating.comment && (
-                        <p className="text-sm text-gray-700 mt-1">{rating.comment}</p>
+                        <p className="text-sm text-gray-700 mt-1 whitespace-pre-wrap">{rating.comment}</p>
                       )}
                     </div>
                   </div>

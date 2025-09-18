@@ -34,7 +34,7 @@ function formatListingData(listing: DocumentData) {
     category: listing.category || 'Unknown',
     price: listing.price || 0,
     images: listing.imageUrls || listing.images || [], // Support both imageUrls and images
-    location: listing.location || '',
+    location: listing.location || 'Unknown Location',
     createdAt: listing.createdAt || new Date().toISOString(),
     status: listing.status || 'active',
     // Aircraft specific fields
@@ -49,20 +49,18 @@ function formatListingData(listing: DocumentData) {
   let title = '';
 
   if (listing.category === 'Aircraft') {
-      title = listing.title || `${listing.year || ''} ${listing.manufacturer || ''} ${listing.model || ''}`.trim();
-  if (!title) title = listing.description || 'Listing';
+      title = `${listing.year || 'Unknown'} ${listing.manufacturer || 'Unknown'} ${listing.model || 'Unknown'}`;
   } else if (listing.category === 'Events') {
-      title = listing.title || listing.description || 'Event Listing';
+      title = listing.title || 'Event Listing';
   } else if (listing.category === 'Real Estate') {
-      title = listing.title || listing.description || 'Real Estate Listing';
+      title = listing.title || 'Real Estate Listing';
   } else if (listing.category === 'Places') {
-      title = listing.title || listing.description || 'Place Listing';
+      title = listing.title || 'Place Listing';
   } else if (listing.category === 'Services') {
-      title = listing.title || listing.description || 'Service Listing';
+      title = listing.title || 'Service Listing';
   } else {
     // Default for Parts and other categories
-    title = listing.title || `${listing.manufacturer || ''} Part`.trim();
-  if (!title) title = listing.description || 'Listing';
+    title = listing.title || `${listing.manufacturer || 'Unknown'} Part`;
   }
 
   return {
@@ -125,7 +123,7 @@ export default function MyListingsPage() {
                 <Header />
                 <main className="flex-grow container mx-auto px-4 py-8 flex flex-col">
                     <h1 className="text-3xl font-bold mb-6">My Listings</h1>
-                    {isLoading ? (
+                    {
                         <div className="space-y-6">
                             {Array.from({ length: 4 }).map((_, i) => (
                                 <div key={i} className="rounded-2xl border bg-card text-card-foreground shadow-sm p-4 space-y-4">
@@ -139,13 +137,24 @@ export default function MyListingsPage() {
                     ) : listings.length > 0 ? (
                         <div className="space-y-6">
                             {listings.map(listing => (
+                                    <Skeleton className="aspect-[4/3] w-full" />
+                                    <Skeleton className="h-6 w-3/4" />
+                                    <Skeleton className="h-4 w-full" />
+                                    <Skeleton className="h-4 w-1/2" />
+                                </div>
+                            )}
+                        </div>
+                    ) : listings.length > 0 ? (
+                        <div className="space-y-6">
+                            {listings.map(listing => (
                                 <ListingListItem 
                                     key={listing.id} 
                                     listing={listing} 
                                     onDelete={handleDelete}
-                                    showDeleteButton={true}
-                                />
-                            ))}
+                                    showDeleteButton={true} 
+                                /> 
+                            )}
+                            )}
                         </div>
                     ) : (
                        <div className="flex-grow flex items-center justify-center">

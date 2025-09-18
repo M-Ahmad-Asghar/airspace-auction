@@ -150,7 +150,10 @@ export function MyListingCard({ listing, onDelete }: MyListingCardProps) {
     }
   };
 
-  const formatPrice = (price: number) => {
+  const formatPrice = (price: number | undefined | null) => {
+    if (!price || price === null || price === undefined) {
+      return 'Price on request';
+    }
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',

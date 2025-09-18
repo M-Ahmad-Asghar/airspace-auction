@@ -51,6 +51,12 @@ const formSchema = z.object({
 }).refine((val) => val === undefined || val > 0, 'Must be a positive number.'),
   
   engineDetails: z.string().optional(),
+  engines: z.array(z.object({
+    engineTime: z.string().optional(),
+    engineDetails: z.string().optional(),
+    engineSerial: z.string().optional(),
+    engineModel: z.string().optional(),
+  })).optional(),
   propellerType: z.string().optional(),
   propellerTime: z.union([z.string(), z.number()]).optional().transform((val) => {
     if (val === "" || val === undefined) return undefined;
@@ -104,6 +110,7 @@ export default function CreateListingPage() {
       interiorDetails: '',
       inspectionStatus: '',
       ifr: '',
+      engines: [],
           },
   });
 
@@ -369,7 +376,7 @@ export default function CreateListingPage() {
                     <FormField control={form.control} name="engineTime" render={({ field }) => (
                       <FormItem>
                         <FormLabel>Engine Time</FormLabel>
-                        <FormControl><Input type="number" placeholder="Enter engine hours" {...field} /></FormControl>
+                        <FormControl><Input placeholder="Enter engine time (e.g., 1,200 hrs, TBO, SMOH)" {...field} /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )} />
@@ -379,6 +386,101 @@ export default function CreateListingPage() {
                         <FormControl><Textarea placeholder="Enter engine details..." {...field} /></FormControl>                        <FormMessage />
                       </FormItem>
                     )} />
+
+                    <div className="md:col-span-2">
+                        <div className="flex items-center justify-between mb-4">
+                            <h4 className="text-lg font-semibold">Additional Engines</h4>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                    const currentEngines = form.getValues("engines") || [];
+                                    form.setValue("engines", [...currentEngines, { engineTime: "", engineDetails: "", engineSerial: "", engineModel: "" }]);
+                                }}
+                            >
+                                Add Engine
+                            </Button>
+                        </div>
+                        
+                        {(form.watch("engines") || []).map((engine, index) => (
+                            <div key={index} className="border rounded-lg p-4 mb-4 space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <h5 className="font-medium">Engine {index + 1}</h5>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => {
+                                            const currentEngines = form.getValues("engines") || [];
+                                            form.setValue("engines", currentEngines.filter((_, i) => i !== index));
+                                        }}
+                                    >
+                                        Remove
+                                    </Button>
+                                </div>
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <FormField
+                                        control={form.control}
+                                        name={`engines.${index}.engineTime`}
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Engine Time</FormLabel>
+                                                <FormControl>
+                                                    <Input placeholder="Enter engine time" {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    
+                                    <FormField
+                                        control={form.control}
+                                        name={`engines.${index}.engineModel`}
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Engine Model</FormLabel>
+                                                <FormControl>
+                                                    <Input placeholder="Enter engine model" {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    
+                                    <FormField
+                                        control={form.control}
+                                        name={`engines.${index}.engineSerial`}
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Engine Serial</FormLabel>
+                                                <FormControl>
+                                                    <Input placeholder="Enter engine serial" {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    
+                                    <FormField
+                                        control={form.control}
+                                        name={`engines.${index}.engineDetails`}
+                                        render={({ field }) => (
+                                            <FormItem className="md:col-span-2">
+                                                <FormLabel>Engine Details</FormLabel>
+                                                <FormControl>
+                                                    <Textarea placeholder="Enter engine details" {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
 
                     <FormField control={form.control} name="propellerType" render={({ field }) => (
                       <FormItem className="md:col-span-2">
@@ -391,7 +493,7 @@ export default function CreateListingPage() {
                     <FormField control={form.control} name="propellerTime" render={({ field }) => (
                       <FormItem>
                         <FormLabel>Propeller Time</FormLabel>
-                        <FormControl><Input type="number" placeholder="Enter propeller hours" {...field} /></FormControl>
+                        <FormControl><Input placeholder="Enter propeller time (e.g., 800 hrs, TBO, OH)" {...field} /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )} />

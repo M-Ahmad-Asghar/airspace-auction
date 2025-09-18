@@ -9,6 +9,7 @@ export function Logo({ className, ...props }: any) {
       width={120}
       height={40}
       className={cn("object-contain", className)}
+      priority
     />
   );
 }

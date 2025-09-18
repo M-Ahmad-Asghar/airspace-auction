@@ -119,7 +119,10 @@ export function ListingCard({ listing }: ListingCardProps) {
       })()
     : 'N/A';
 
-  const formatPrice = (price: number) => {
+  const formatPrice = (price: number | undefined | null) => {
+    if (!price || price === null || price === undefined) {
+      return 'Price on request';
+    }
     if (price >= 1000000) {
       return `$${(price / 1000000).toFixed(1)}M`;
     } else if (price >= 1000) {

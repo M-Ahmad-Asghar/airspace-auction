@@ -22,12 +22,12 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
         <ListingDetailView listing={listing} />
         
         {/* Similar Listings */}
-        <div className="mt-12">
+        {/* <div className="mt-12">
           <SimilarListings 
             listingId={listing.id}
             category={listing.category}
           />
-        </div>
+        </div> */}
       </main>
     </div>
   );

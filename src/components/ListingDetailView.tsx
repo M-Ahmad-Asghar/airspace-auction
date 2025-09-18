@@ -37,6 +37,8 @@ import { addToWishlist, removeFromWishlist, isInWishlist } from '@/services/wish
 import type { DocumentData } from 'firebase/firestore';
 
 export function ListingDetailView({ listing }: { listing: DocumentData }) {
+  console.log("listing", listing);
+  
   const { user } = useAuth();
   const [mainImage, setMainImage] = useState(0);
   const [isInWishlistState, setIsInWishlistState] = useState(false);

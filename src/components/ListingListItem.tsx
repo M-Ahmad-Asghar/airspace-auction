@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Bookmark, Heart, MapPin, Camera, Star, Trash2 } from 'lucide-react';
+import { ShareButton } from '@/components/ShareComponent';
 
 interface ListingListItemProps {
   onDelete?: (id: string) => void;
@@ -78,9 +79,15 @@ export function ListingListItem({ listing, index = 0, onDelete, showDeleteButton
                         </div>
                     </div>
                 </div>
-                <Button variant="ghost" size="icon" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete?.(listing.id); }} className="text-red-500 hover:text-red-700 hover:bg-red-50">
+                <div className="flex gap-2">
+                    <ShareButton 
+                        listing={listing}
+                        className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                    />
+                    <Button variant="ghost" size="icon" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete?.(listing.id); }} className="text-red-500 hover:text-red-700 hover:bg-red-50">
                     {showDeleteButton ? <Trash2 className="h-6 w-6" /> : <Bookmark className="h-6 w-6 text-muted-foreground" />}
                 </Button>
+                </div>
             </div>
         </div>
       </Card>

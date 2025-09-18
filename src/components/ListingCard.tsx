@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { addToWishlist, isInWishlist, removeFromWishlist } from '@/services/wishlistService';
 import { formatDistanceToNow } from 'date-fns';
 import { Eye, Heart, Share2, Star } from 'lucide-react';
+import { ShareButton } from '@/components/ShareComponent';
 import Image from 'next/image';
 import Link from 'next/link';
 import React, { useEffect, useState } from 'react';
@@ -154,16 +155,19 @@ export function ListingCard({ listing }: ListingCardProps) {
 
 
           {/* Wishlist Button */}
-          <div className="absolute top-3 right-3">
-            <Button
+          <div className="absolute top-3 right-3 flex gap-1">
+            <ShareButton 
+              listing={listing}
+              className="bg-black/30 hover:bg-black/50 text-white rounded-full h-7 w-7"
+            />            <Button
               variant="ghost"
               size="icon"
-              className="bg-black/30 hover:bg-black/50 text-white rounded-full h-8 w-8"
+              className="bg-black/30 hover:bg-black/50 text-white rounded-full h-7 w-7"
               onClick={handleWishlistClick}
               disabled={isLoading}
             >
               <Heart 
-                className={`h-4 w-4 ${isInWishlistState ? 'fill-red-500 text-red-500' : ''}`} 
+                className={`h-3 w-3 ${isInWishlistState ? 'fill-red-500 text-red-500' : ''}`} 
               />
             </Button>
           </div>

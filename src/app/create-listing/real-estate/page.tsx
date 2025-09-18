@@ -160,7 +160,7 @@ export default function CreateRealEstateListingPage() {
                     name="images"
                     render={() => (
                       <FormItem>
-                         <FormLabel className="text-base font-semibold">Add Photos</FormLabel>
+                         <FormLabel className="text-base font-semibold">Add Photos <span className="text-red-500">*</span></FormLabel>
                         <FormControl>
                           <ImageUploader onFilesChange={handleFilesChange} maxFiles={4} existingImages={existingImages} />
                         </FormControl>
@@ -178,7 +178,7 @@ export default function CreateRealEstateListingPage() {
                     )} />
                      <FormField control={form.control} name="type" render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Type</FormLabel>
+                            <FormLabel>Type <span className="text-red-500">*</span></FormLabel>
                             <FormControl><Input placeholder="e.g., Aircraft, Engine, Propeller" {...field} /></FormControl>
                             <FormMessage />
                         </FormItem>
@@ -212,7 +212,7 @@ export default function CreateRealEstateListingPage() {
                         </FormItem>
                     )} />                     <FormField control={form.control} name="description" render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Description</FormLabel>
+                            <FormLabel>Description <span className="text-red-500">*</span></FormLabel>
                             <FormControl>
                                 <div className="relative">
                                     <Textarea placeholder="Enter here" {...field} className="min-h-[150px] pr-10" />

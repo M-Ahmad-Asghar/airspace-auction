@@ -220,6 +220,9 @@ async function Listings({ filters }: { filters: SearchFilters }) {
   );
 }
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function HomePage({ searchParams }: { searchParams?: Promise<SearchFilters> }) {
   const resolvedSearchParams = await searchParams;
   

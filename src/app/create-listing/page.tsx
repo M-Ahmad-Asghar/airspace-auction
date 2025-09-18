@@ -51,12 +51,6 @@ const formSchema = z.object({
 }).refine((val) => val === undefined || val > 0, 'Must be a positive number.'),
   
   engineDetails: z.string().optional(),
-  engines: z.array(z.object({
-    engineTime: z.string().optional(),
-    engineDetails: z.string().optional(),
-    engineSerial: z.string().optional(),
-    engineModel: z.string().optional(),
-  })).optional(),
   propellerType: z.string().optional(),
   propellerTime: z.union([z.string(), z.number()]).optional().transform((val) => {
     if (val === "" || val === undefined) return undefined;
@@ -71,7 +65,7 @@ const formSchema = z.object({
   exteriorDetails: z.string().optional(),
   interiorDetails: z.string().optional(),
   inspectionStatus: z.string().optional(),
-  ifr: z.string().optional(),
+  ifr: z.union([z.enum(['Yes', 'No', 'Capable', 'Unknown']), z.literal(''), z.undefined()]).optional().transform(val => val === '' ? undefined : val),
   });
 
 export default function CreateListingPage() {
@@ -110,7 +104,6 @@ export default function CreateListingPage() {
       interiorDetails: '',
       inspectionStatus: '',
       ifr: '',
-      engines: [],
           },
   });
 
@@ -182,19 +175,12 @@ export default function CreateListingPage() {
         console.log('Images uploaded successfully:', imageUrls);
       }
       
-      // Remove File objects and undefined values to prevent Firebase errors
+      // Remove undefined values to prevent Firebase errors
       Object.keys(processedValues).forEach(key => {
-        const value = processedValues[key];
-        if (value instanceof File || value === undefined) {
+        if (processedValues[key] === undefined) {
           delete processedValues[key];
-        } else if (Array.isArray(value)) {
-          // Remove File objects from arrays
-          processedValues[key] = value.filter(item => !(item instanceof File));
         }
-      });
-      
-      console.log("Processed values before saving:", processedValues);
-      
+      })
       
       if (isEditMode && listingId) {
         await updateListing(listingId, processedValues, user.uid);
@@ -211,8 +197,6 @@ export default function CreateListingPage() {
             title: isEditMode ? 'Update Failed' : 'Submission Failed',
             description: error instanceof Error ? error.message : 'An unexpected error occurred.',
         });
-      
-      console.log("Processed values before saving:", processedValues);
     } finally {
         setIsLoading(false);
     }
@@ -247,7 +231,7 @@ export default function CreateListingPage() {
                   )} />
                   <FormField control={form.control} name="type" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Type</FormLabel>
+                      <FormLabel>Type <span className="text-red-500">*</span></FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger><SelectValue placeholder="Select a type" /></SelectTrigger>
@@ -267,7 +251,7 @@ export default function CreateListingPage() {
                     name="images"
                     render={() => (
                       <FormItem>
-                         <FormLabel className="text-base font-semibold">Add Photos</FormLabel>
+                         <FormLabel className="text-base font-semibold">Add Photos <span className="text-red-500">*</span></FormLabel>
                         <FormControl>
                           <ImageUploader onFilesChange={handleFilesChange} maxFiles={4} existingImages={existingImages} />
                         </FormControl>
@@ -352,7 +336,7 @@ export default function CreateListingPage() {
                 <div className="pt-8 border-t">
                     <FormField control={form.control} name="description" render={({ field }) => (
                     <FormItem>
-                        <FormLabel>Description</FormLabel>
+                        <FormLabel>Description <span className="text-red-500">*</span></FormLabel>
                         <FormControl>
                           <Textarea placeholder="Describe the aircraft..." {...field} className="min-h-[150px]" />
                         </FormControl>
@@ -376,7 +360,7 @@ export default function CreateListingPage() {
                     <FormField control={form.control} name="engineTime" render={({ field }) => (
                       <FormItem>
                         <FormLabel>Engine Time</FormLabel>
-                        <FormControl><Input placeholder="Enter engine time (e.g., 1,200 hrs, TBO, SMOH)" {...field} /></FormControl>
+                        <FormControl><Input type="number" placeholder="Enter engine hours" {...field} /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )} />
@@ -386,101 +370,6 @@ export default function CreateListingPage() {
                         <FormControl><Textarea placeholder="Enter engine details..." {...field} /></FormControl>                        <FormMessage />
                       </FormItem>
                     )} />
-
-                    <div className="md:col-span-2">
-                        <div className="flex items-center justify-between mb-4">
-                            <h4 className="text-lg font-semibold">Additional Engines</h4>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                    const currentEngines = form.getValues("engines") || [];
-                                    form.setValue("engines", [...currentEngines, { engineTime: "", engineDetails: "", engineSerial: "", engineModel: "" }]);
-                                }}
-                            >
-                                Add Engine
-                            </Button>
-                        </div>
-                        
-                        {(form.watch("engines") || []).map((engine, index) => (
-                            <div key={index} className="border rounded-lg p-4 mb-4 space-y-4">
-                                <div className="flex items-center justify-between">
-                                    <h5 className="font-medium">Engine {index + 1}</h5>
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => {
-                                            const currentEngines = form.getValues("engines") || [];
-                                            form.setValue("engines", currentEngines.filter((_, i) => i !== index));
-                                        }}
-                                    >
-                                        Remove
-                                    </Button>
-                                </div>
-                                
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <FormField
-                                        control={form.control}
-                                        name={`engines.${index}.engineTime`}
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Engine Time</FormLabel>
-                                                <FormControl>
-                                                    <Input placeholder="Enter engine time" {...field} />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    
-                                    <FormField
-                                        control={form.control}
-                                        name={`engines.${index}.engineModel`}
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Engine Model</FormLabel>
-                                                <FormControl>
-                                                    <Input placeholder="Enter engine model" {...field} />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    
-                                    <FormField
-                                        control={form.control}
-                                        name={`engines.${index}.engineSerial`}
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Engine Serial</FormLabel>
-                                                <FormControl>
-                                                    <Input placeholder="Enter engine serial" {...field} />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    
-                                    <FormField
-                                        control={form.control}
-                                        name={`engines.${index}.engineDetails`}
-                                        render={({ field }) => (
-                                            <FormItem className="md:col-span-2">
-                                                <FormLabel>Engine Details</FormLabel>
-                                                <FormControl>
-                                                    <Textarea placeholder="Enter engine details" {...field} />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-
 
                     <FormField control={form.control} name="propellerType" render={({ field }) => (
                       <FormItem className="md:col-span-2">
@@ -493,7 +382,7 @@ export default function CreateListingPage() {
                     <FormField control={form.control} name="propellerTime" render={({ field }) => (
                       <FormItem>
                         <FormLabel>Propeller Time</FormLabel>
-                        <FormControl><Input placeholder="Enter propeller time (e.g., 800 hrs, TBO, OH)" {...field} /></FormControl>
+                        <FormControl><Input type="number" placeholder="Enter propeller hours" {...field} /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )} />
@@ -560,11 +449,22 @@ export default function CreateListingPage() {
                         <FormField control={form.control} name="ifr" render={({ field }) => (
                         <FormItem>
                             <FormLabel>IFR</FormLabel>
-                            <FormControl><Input placeholder="Enter here" {...field} /></FormControl>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select IFR status" />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    <SelectItem value="Yes">Yes</SelectItem>
+                                    <SelectItem value="No">No</SelectItem>
+                                    <SelectItem value="Capable">Capable</SelectItem>
+                                    <SelectItem value="Unknown">Unknown</SelectItem>
+                                </SelectContent>
+                            </Select>
                             <FormMessage />
                         </FormItem>
-                        )} />
-                    </div>
+                        )} />                    </div>
                   </div>
                 </div>
 

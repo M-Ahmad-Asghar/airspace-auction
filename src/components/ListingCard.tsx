@@ -37,7 +37,8 @@ export function ListingCard({ listing }: ListingCardProps) {
   const { user } = useAuth();
   const [isInWishlistState, setIsInWishlistState] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-
+  console.log("listing", listing);
+  
   useEffect(() => {
     if (user && listing.id) {
       checkWishlistStatus();
@@ -137,7 +138,7 @@ export function ListingCard({ listing }: ListingCardProps) {
       <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
         <div className="relative aspect-[4/3] overflow-hidden">
           <Image priority sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            src={listing.imageUrl}
+            src={listing.imageUrl || listing.imageUrls?.[0] || ''}
             alt={listing.title}
             fill
             className="object-cover group-hover:scale-105 transition-transform duration-300"

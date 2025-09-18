@@ -190,14 +190,14 @@ export default function CreatePartListingPage() {
                     )} />
                      <FormField control={form.control} name="type" render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Type</FormLabel>
+                            <FormLabel>Type <span className="text-red-500">*</span></FormLabel>
                             <FormControl><Input placeholder="e.g., Aircraft, Engine, Propeller" {...field} /></FormControl>
                             <FormMessage />
                         </FormItem>
                     )} />
                      <FormField control={form.control} name="description" render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Description</FormLabel>
+                            <FormLabel>Description <span className="text-red-500">*</span></FormLabel>
                             <FormControl><Textarea placeholder="Describe the part and its condition..." {...field} className="min-h-[150px]" /></FormControl>
                             <FormMessage />
                         </FormItem>

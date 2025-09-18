@@ -154,7 +154,7 @@ export default function CreateServiceListingPage() {
                     name="images"
                     render={() => (
                       <FormItem>
-                         <FormLabel className="text-base font-semibold">Add Photos</FormLabel>
+                         <FormLabel className="text-base font-semibold">Add Photos <span className="text-red-500">*</span></FormLabel>
                         <FormControl>
                           <ImageUploader onFilesChange={handleFilesChange} maxFiles={4} existingImages={existingImages} />
                         </FormControl>
@@ -172,7 +172,7 @@ export default function CreateServiceListingPage() {
                     )} />
                      <FormField control={form.control} name="type" render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Type</FormLabel>
+                            <FormLabel>Type <span className="text-red-500">*</span></FormLabel>
                             <FormControl><Input placeholder="e.g., Aircraft, Engine, Propeller" {...field} /></FormControl>
                             <FormMessage />
                         </FormItem>
@@ -206,7 +206,7 @@ export default function CreateServiceListingPage() {
                         </FormItem>
                     )} />                     <FormField control={form.control} name="description" render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Description</FormLabel>
+                            <FormLabel>Description <span className="text-red-500">*</span></FormLabel>
                             <FormControl>
                                 <div className="relative">
                                     <Textarea placeholder="Describe the service you offer..." {...field} className="min-h-[150px] pr-10" />

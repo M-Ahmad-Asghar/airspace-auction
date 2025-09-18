@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
+import { RefreshCw } from 'lucide-react';
 import { safeTimestampToDate } from '@/lib/utils';
 
 function formatListingData(listing: DocumentData) {
@@ -124,7 +125,39 @@ export default function MyListingsPage() {
             <div className="flex flex-col min-h-screen">
                 <Header />
                 <main className="flex-grow container mx-auto px-4 py-8 flex flex-col">
-                    <h1 className="text-3xl font-bold mb-6">My Listings</h1>
+                    <div className="flex items-center justify-between mb-6">
+                        <h1 className="text-3xl font-bold">My Listings</h1>
+                        <Button 
+                            variant="outline" 
+                            onClick={() => {
+                                if (user) {
+                                    setLoading(true);
+                                    getListingsByUserId(user.uid)
+                                        .then(data => {
+                                            const plainData = JSON.parse(JSON.stringify(data));
+                                            const sortedData = [...plainData].sort((a, b) => {
+                                                const aSeconds = a.createdAt?.seconds || 0;
+                                                const bSeconds = b.createdAt?.seconds || 0;
+                                                if (isNaN(aSeconds) || aSeconds < 0) return 1;
+                                                if (isNaN(bSeconds) || bSeconds < 0) return -1;
+                                                return bSeconds - aSeconds;
+                                            });
+                                            const formattedData = sortedData.map(formatListingData);
+                                            setListings(formattedData);
+                                        })
+                                        .catch(error => {
+                                            console.error("Failed to fetch user listings", error);
+                                            toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch your listings.' });
+                                        })
+                                        .finally(() => setLoading(false));
+                                }
+                            }}
+                            disabled={loading}
+                        >
+                            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                            {loading ? 'Refreshing...' : 'Refresh'}
+                        </Button>
+                    </div>
                     {isLoading ? (
                         <div className="space-y-6">
                             {Array.from({ length: 4 }).map((_, i) => (

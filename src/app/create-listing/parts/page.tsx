@@ -112,16 +112,24 @@ export default function CreatePartListingPage() {
       if (values.images && values.images.length > 0) {
         console.log("Uploading images...");
         const imageUrls = await uploadImages(values.images, user.uid);
-        processedValues.images = imageUrls;
+        processedValues.imageUrls = imageUrls;
+        delete processedValues.images; // Remove File objects
         console.log("Images uploaded successfully:", imageUrls);
       }
       
-      // Remove undefined values to prevent Firebase errors
+      // Remove File objects and undefined values to prevent Firebase errors
       Object.keys(processedValues).forEach(key => {
-        if (processedValues[key] === undefined) {
+        const value = processedValues[key];
+        if (value instanceof File || value === undefined) {
           delete processedValues[key];
+        } else if (Array.isArray(value)) {
+          // Remove File objects from arrays
+          processedValues[key] = value.filter(item => !(item instanceof File));
         }
-      })
+      });
+      
+      console.log("Processed values before saving:", processedValues);
+      
       
       if (isEditMode && listingId) {
         await updateListing(listingId, processedValues, user.uid);
@@ -138,6 +146,8 @@ export default function CreatePartListingPage() {
         title: isEditMode ? 'Update Failed' : 'Submission Failed',
         description: error instanceof Error ? error.message : 'An unexpected error occurred.',
       });
+      
+      console.log("Processed values before saving:", processedValues);
     } finally {
       setIsLoading(false);
     }

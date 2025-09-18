@@ -32,13 +32,13 @@ function formatListingData(listing: DocumentData) {
     id: listing.id || '',
     price: listing.price || 0,
     imageUrl: listing.imageUrls?.[0] || `https://placehold.co/600x450.png`,
-    location: listing.location || 'Unknown Location',
+    location: listing.location || '',
     postedDate: postDateStr,
     userName: 'Joseph Andrew', // Placeholder
     userAvatarUrl: 'https://placehold.co/40x40.png', // Placeholder
     rating: 5.0, // Placeholder
     ratingCount: 145, // Placeholder
-    description: listing.description || 'No description provided.',
+    description: listing.description || '',
     imageCount: listing.imageUrls?.length || 0,
     // Additional fields for wishlist functionality
     manufacturer: listing.manufacturer,
@@ -322,7 +322,7 @@ export default function HomePage({ searchParams }: { searchParams?: SearchFilter
           {formattedListings.length > 0 ? (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
               <div className="lg:col-span-8 space-y-6">
-                {formattedListings.map((listing: any) => <ListingListItem key={listing.id} listing={listing} />)}
+                {formattedListings.map((listing: any, index: number) => <ListingListItem key={listing.id} listing={listing} index={index} />)}
               </div>
               <aside className="hidden lg:col-span-4 lg:block space-y-6">
                 <SponsoredAdCard />
@@ -350,7 +350,7 @@ export default function HomePage({ searchParams }: { searchParams?: SearchFilter
         {formattedListings.length > 0 ? (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             <div className="lg:col-span-8 space-y-6">
-              {formattedListings.map((listing: any) => <ListingListItem key={listing.id} listing={listing} />)}
+              {formattedListings.map((listing: any, index: number) => <ListingListItem key={listing.id} listing={listing} index={index} />)}
             </div>
             <aside className="hidden lg:col-span-4 lg:block space-y-6">
               <SponsoredAdCard />

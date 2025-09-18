@@ -16,7 +16,7 @@ export function SponsoredAdCard() {
       </CardHeader>
       <CardContent className="p-0">
         <div className="relative aspect-[4/3] w-full">
-          <Image
+          <Image sizes="(max-width: 768px) 100vw, 50vw"
             src="https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=400&h=300&fit=crop&crop=center"
             alt="Sponsored aircraft"
             fill

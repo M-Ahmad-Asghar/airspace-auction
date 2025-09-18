@@ -189,7 +189,7 @@ export function ListingDetailView({ listing }: { listing: DocumentData }) {
             <div className="relative aspect-[4/3] overflow-hidden rounded-t-lg">
               {hasImages ? (
                 <>
-                  <Image
+                  <Image sizes="(max-width: 768px) 100vw, (max-width: 1200px) 66vw, 50vw"
                     src={images[mainImage]}
                     alt={listing.title}
                     fill
@@ -260,7 +260,7 @@ export function ListingDetailView({ listing }: { listing: DocumentData }) {
                         index === mainImage ? 'border-primary' : 'border-transparent hover:border-gray-300'
                       }`}
                     >
-                      <Image
+                      <Image sizes="(max-width: 768px) 100vw, (max-width: 1200px) 66vw, 50vw"
                         src={image}
                         alt={`${listing.title} ${index + 1}`}
                         fill
@@ -464,7 +464,7 @@ export function ListingDetailView({ listing }: { listing: DocumentData }) {
             >
               <X className="h-4 w-4" />
             </Button>
-            <Image
+            <Image sizes="(max-width: 768px) 100vw, (max-width: 1200px) 66vw, 50vw"
               src={imageModal.src}
               alt={imageModal.alt}
               width={800}

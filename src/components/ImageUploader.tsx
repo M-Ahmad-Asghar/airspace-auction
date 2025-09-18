@@ -71,7 +71,7 @@ export function ImageUploader({ onFilesChange, maxFiles = 4, existingImages = []
                 <div key={index} className="relative aspect-square group border rounded-md flex items-center justify-center bg-muted/50">
                     {isUploaded && url ? (
                         <>
-                            <Image
+                            <Image sizes="(max-width: 768px) 50vw, 25vw"
                                 src={url}
                                 alt={`Preview ${index}`}
                                 fill

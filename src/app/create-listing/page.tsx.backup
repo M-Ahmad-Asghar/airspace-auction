@@ -170,24 +170,16 @@ export default function CreateListingPage() {
       if (values.images && values.images.length > 0) {
         console.log('Uploading images...');
         const imageUrls = await uploadImages(values.images, user.uid);
-        processedValues.imageUrls = imageUrls;
-        delete processedValues.images; // Remove File objects
+        processedValues.images = imageUrls;
         console.log('Images uploaded successfully:', imageUrls);
       }
       
-      // Remove File objects and undefined values to prevent Firebase errors
+      // Remove undefined values to prevent Firebase errors
       Object.keys(processedValues).forEach(key => {
-        const value = processedValues[key];
-        if (value instanceof File || value === undefined) {
+        if (processedValues[key] === undefined) {
           delete processedValues[key];
-        } else if (Array.isArray(value)) {
-          // Remove File objects from arrays
-          processedValues[key] = value.filter(item => !(item instanceof File));
         }
-      });
-      
-      console.log("Processed values before saving:", processedValues);
-      
+      })
       
       if (isEditMode && listingId) {
         await updateListing(listingId, processedValues, user.uid);
@@ -204,8 +196,6 @@ export default function CreateListingPage() {
             title: isEditMode ? 'Update Failed' : 'Submission Failed',
             description: error instanceof Error ? error.message : 'An unexpected error occurred.',
         });
-      
-      console.log("Processed values before saving:", processedValues);
     } finally {
         setIsLoading(false);
     }

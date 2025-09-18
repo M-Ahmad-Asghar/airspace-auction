@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Bookmark, Heart, MapPin, Camera, Star } from 'lucide-react';
 
 interface ListingListItemProps {
+  index?: number;
   listing: {
     id: string;
     title: string;
@@ -24,13 +25,13 @@ interface ListingListItemProps {
   };
 }
 
-export function ListingListItem({ listing }: ListingListItemProps) {
+export function ListingListItem({ listing, index = 0 }: ListingListItemProps) {
   return (
     <Link href={`/listing/${listing.id}`} className="block">
       <Card className="overflow-hidden transition-shadow duration-300 hover:shadow-xl rounded-2xl border group flex flex-col md:flex-row">
         <div className="relative md:w-1/3">
           <div className="aspect-[4/3] relative">
-            <Image
+            <Image priority={index < 4} sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 25vw"
               src={listing.imageUrl}
               alt={listing.title}
               fill

@@ -133,7 +133,7 @@ export function ListingCard({ listing }: ListingCardProps) {
     <Link href={`/listing/${listing.id}`} className="block">
       <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
         <div className="relative aspect-[4/3] overflow-hidden">
-          <Image
+          <Image priority sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             src={listing.imageUrl}
             alt={listing.title}
             fill

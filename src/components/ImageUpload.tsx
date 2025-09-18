@@ -78,7 +78,7 @@ export function ImageUpload({ onImageSelect, disabled, clearPreview }: ImageUplo
     return (
       <div className="relative inline-block">
         <div className="relative w-16 h-16 rounded-lg overflow-hidden border-2 border-blue-200">
-          <Image
+          <Image sizes="64px"
             src={preview}
             alt="Preview"
             fill

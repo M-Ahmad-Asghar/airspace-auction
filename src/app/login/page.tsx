@@ -32,7 +32,7 @@ import { auth, isFirebaseConfigured } from '@/lib/firebase';
 import { ArrowLeft, Lock, XCircle, ExternalLink, Eye, EyeOff, Terminal } from 'lucide-react';
 import { PublicHeader } from '@/components/PublicHeader';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { createUserProfile, checkUserExistsByEmail, type UserProfileData } from '@/services/userService';
+import { createUserProfile, checkUserExistsByEmail, sendGoogleLoginWebhook, type UserProfileData } from '@/services/userService';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email.' }),
@@ -172,7 +172,14 @@ export default function LoginPage() {
     try {
         const result = await signInWithPopup(auth, provider);
         const { uid, email, displayName, photoURL, emailVerified } = result.user;
+        
+        // Create user profile (this will also send signup webhook for new users)
         await createUserProfile({ uid, email, displayName, photoURL, emailVerified }, 'google');
+        
+        // Send Google login webhook for existing users
+        const userData: UserProfileData = { uid, email, displayName, photoURL, emailVerified };
+        await sendGoogleLoginWebhook(userData);
+        
         toast({ title: "Success", description: "You've successfully signed in with Google." });
         router.push("/");
     } catch (error: any) {
@@ -181,7 +188,6 @@ export default function LoginPage() {
         setIsLoading(false);
     }
   };
-
   const handleForgotPasswordSubmit = async (values: z.infer<typeof forgotPasswordSchema>) => {
     if (!isFirebaseConfigured || !auth) return;
     setIsResettingPassword(true);

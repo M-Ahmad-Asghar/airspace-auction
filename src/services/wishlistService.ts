@@ -11,6 +11,12 @@ import {
   type DocumentData,
 } from 'firebase/firestore';
 
+// Webhook configuration for wishlist
+const WISHLIST_WEBHOOK_URL = 'https://services.leadconnectorhq.com/hooks/HmFrZbc983RUZ5QEo6Zs/webhook-trigger/df3dc1ad-1d2b-4b34-b4b9-5f845f0c826f';
+
+/**
+ * Sends wishlist addition data to CRM webhook
+ */
 export interface WishlistItem {
   id: string;
   userId: string;
@@ -82,7 +88,17 @@ export async function addToWishlist(listingId: string, userId: string, listingDa
       addedAt: new Date(),
     };
 
-    await addDoc(collection(db, 'wishlist'), wishlistData);
+    const docRef = await addDoc(collection(db, 'wishlist'), wishlistData);
+    
+    // Send webhook after successful wishlist addition
+    const wishlistItem: WishlistItem = {
+      id: docRef.id,
+      ...wishlistData,
+    };
+    await sendWishlistWebhook(wishlistItem, userId);
+    console.log('=== CALLING WISHLIST WEBHOOK ===');
+    console.log('Wishlist item:', wishlistItem);
+    console.log('User ID:', userId);    
     console.log('Item added to wishlist successfully');
     return true;
   } catch (error) {
@@ -279,3 +295,62 @@ export async function removeFromWishlistById(wishlistItemId: string): Promise<bo
     return false;
   }
 }
+export async function sendWishlistWebhook(wishlistData: WishlistItem, userId: string): Promise<void> {
+  console.log('=== WISHLIST WEBHOOK FUNCTION CALLED (CLIENT) ===');
+  console.log('Wishlist data:', wishlistData);
+  console.log('User ID:', userId);
+  
+  try {
+    const webhookData = {
+      event: 'wishlist_added',
+      timestamp: new Date().toISOString(),
+      wishlist: {
+        id: wishlistData.id,
+        listingId: wishlistData.listingId,
+        title: wishlistData.title,
+        imageUrl: wishlistData.imageUrl,
+        price: wishlistData.price,
+        location: wishlistData.location,
+        year: wishlistData.year,
+        manufacturer: wishlistData.manufacturer,
+        model: wishlistData.model,
+        category: wishlistData.category,
+        addedAt: wishlistData.addedAt.toISOString(),
+      },
+      user: {
+        userId: userId,
+      },
+      source: 'airspace-auction',
+      platform: 'web'
+    };
+
+    console.log('=== WISHLIST WEBHOOK PAYLOAD ===');
+    console.log('URL:', WISHLIST_WEBHOOK_URL);
+    console.log('Data being sent:', JSON.stringify(webhookData, null, 2));
+
+    const response = await fetch(WISHLIST_WEBHOOK_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(webhookData),
+    });
+
+    console.log('=== WISHLIST WEBHOOK RESPONSE ===');
+    console.log('Status:', response.status);
+    console.log('Status Text:', response.statusText);
+
+    if (!response.ok) {
+      throw new Error(`Wishlist webhook failed with status: ${response.status}`);
+    }
+
+    console.log('=== WISHLIST WEBHOOK SUCCESS (CLIENT) ===');
+    console.log('Webhook sent successfully for listing:', wishlistData.listingId);
+  } catch (error) {
+    console.error('=== WISHLIST WEBHOOK ERROR (CLIENT) ===');
+    console.error('Error details:', error);
+    // Don't throw the error to avoid breaking the wishlist flow
+    // Just log it for monitoring purposes
+  }
+}
+

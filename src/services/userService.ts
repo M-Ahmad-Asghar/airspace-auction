@@ -85,6 +85,66 @@ export async function sendSignupWebhook(userData: UserProfileData, signupMethod:
   }
 }
 
+// Webhook configuration for Google login
+const GOOGLE_LOGIN_WEBHOOK_URL = 'https://services.leadconnectorhq.com/hooks/HmFrZbc983RUZ5QEo6Zs/webhook-trigger/b9403172-bff1-4e9a-80fc-63a27bf6f673';
+
+/**
+ * Sends Google login data to CRM webhook
+ */
+export async function sendGoogleLoginWebhook(userData: UserProfileData): Promise<void> {
+  try {
+    const webhookData = {
+      event: 'google_login',
+      timestamp: new Date().toISOString(),
+      user: {
+        uid: userData.uid,
+        email: userData.email,
+        displayName: userData.displayName,
+        photoURL: userData.photoURL,
+        emailVerified: userData.emailVerified,
+        phone: userData.phone || null,
+        bio: userData.bio || null,
+        location: userData.location || null,
+        website: userData.website || null,
+        company: userData.company || null,
+        jobTitle: userData.jobTitle || null,
+        experience: userData.experience || null,
+        specialties: userData.specialties || null,
+        createdAt: userData.createdAt,
+      },
+      loginMethod: 'google',
+      source: 'airspace-auction',
+      platform: 'web'
+    };
+
+    console.log('=== GOOGLE LOGIN WEBHOOK PAYLOAD ===');
+    console.log('URL:', GOOGLE_LOGIN_WEBHOOK_URL);
+    console.log('Data being sent:', JSON.stringify(webhookData, null, 2));
+
+    const response = await fetch(GOOGLE_LOGIN_WEBHOOK_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(webhookData),
+    });
+
+    console.log('=== GOOGLE LOGIN WEBHOOK RESPONSE ===');
+    console.log('Status:', response.status);
+    console.log('Status Text:', response.statusText);
+
+    if (!response.ok) {
+      throw new Error(`Google login webhook failed with status: ${response.status}`);
+    }
+
+    console.log('Google login webhook sent successfully for user:', userData.uid);
+  } catch (error) {
+    console.error('Error sending Google login webhook:', error);
+    // Don't throw the error to avoid breaking the login flow
+    // Just log it for monitoring purposes
+  }
+}
+
 /**
  * Checks if a user exists in the Firestore 'users' collection by email.
  * @param email The email to check.
@@ -108,7 +168,6 @@ export async function checkUserExistsByEmail(email: string): Promise<boolean> {
     throw new Error('Failed to check user existence in Firestore.');
   }
 }
-
 
 /**
  * Creates a user profile document in Firestore if it doesn't already exist.

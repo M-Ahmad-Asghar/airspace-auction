@@ -79,7 +79,7 @@ export function ListingCard({ listing }: ListingCardProps) {
           description: "Listing removed from your wishlist.",
         });
       } else {
-        await addToWishlist(listing.id, user.uid, {
+        console.log('=== ADDING TO WISHLIST (CLIENT) ===');        await addToWishlist(listing.id, user.uid, {
           title: listing.title,
           price: listing.price,
           location: listing.location,

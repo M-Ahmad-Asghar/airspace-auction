@@ -1,6 +1,73 @@
 import { db } from '@/lib/firebase';
 import { collection, getDocs, query, where, orderBy, limit, DocumentData } from 'firebase/firestore';
 
+// Webhook configuration for listings
+const LISTING_WEBHOOK_URL = 'https://services.leadconnectorhq.com/hooks/HmFrZbc983RUZ5QEo6Zs/webhook-trigger/4016772b-9751-483b-885c-38be96af4363';
+
+/**
+ * Sends listing creation data to CRM webhook
+ */
+export async function sendListingWebhook(listingData: any, listingId: string, userId: string): Promise<void> {
+  try {
+    const webhookData = {
+      event: 'listing_created',
+      timestamp: new Date().toISOString(),
+      listing: {
+        id: listingId,
+        title: listingData.title || null,
+        description: listingData.description || null,
+        price: listingData.price || null,
+        category: listingData.category || null,
+        location: listingData.location || null,
+        manufacturer: listingData.manufacturer || null,
+        model: listingData.model || null,
+        year: listingData.year || null,
+        imageUrls: listingData.imageUrls || [],
+        imageCount: listingData.imageCount || 0,
+        views: listingData.views || 0,
+        shares: listingData.shares || 0,
+        averageRating: listingData.averageRating || 0,
+        ratingCount: listingData.ratingCount || 0,
+        createdAt: listingData.createdAt,
+        updatedAt: listingData.updatedAt,
+      },
+      user: {
+        userId: userId,
+        userName: listingData.userName || null,
+        userEmail: listingData.userEmail || null,
+      },
+      source: 'airspace-auction',
+      platform: 'web'
+    };
+
+    console.log('=== LISTING WEBHOOK PAYLOAD ===');
+    console.log('URL:', LISTING_WEBHOOK_URL);
+    console.log('Data being sent:', JSON.stringify(webhookData, null, 2));
+
+    const response = await fetch(LISTING_WEBHOOK_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(webhookData),
+    });
+
+    console.log('=== LISTING WEBHOOK RESPONSE ===');
+    console.log('Status:', response.status);
+    console.log('Status Text:', response.statusText);
+
+    if (!response.ok) {
+      throw new Error(`Listing webhook failed with status: ${response.status}`);
+    }
+
+    console.log('Listing webhook sent successfully for listing:', listingId);
+  } catch (error) {
+    console.error('Error sending listing webhook:', error);
+    // Don't throw the error to avoid breaking the listing creation flow
+    // Just log it for monitoring purposes
+  }
+}
+
 export interface SearchFilters {
   category?: string;
   searchTerm?: string;
@@ -280,6 +347,15 @@ export async function createAircraftListing(data: any, userId: string, userName?
     };
 
     const docRef = await addDoc(collection(db, 'listings'), listingData);
+    
+    // Send webhook after successful listing creation
+    const listingDataWithTimestamp = {
+      ...listingData,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    await sendListingWebhook(listingDataWithTimestamp, docRef.id, userId);
+    
     return docRef.id;
   } catch (error) {
     console.error('Error creating aircraft listing:', error);
@@ -309,6 +385,15 @@ export async function createRealEstateListing(data: any, userId: string, userNam
     };
 
     const docRef = await addDoc(collection(db, 'listings'), listingData);
+    
+    // Send webhook after successful listing creation
+    const listingDataWithTimestamp = {
+      ...listingData,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    await sendListingWebhook(listingDataWithTimestamp, docRef.id, userId);
+    
     return docRef.id;
   } catch (error) {
     console.error('Error creating real estate listing:', error);
@@ -338,6 +423,15 @@ export async function createEventListing(data: any, userId: string, userName?: s
     };
 
     const docRef = await addDoc(collection(db, 'listings'), listingData);
+    
+    // Send webhook after successful listing creation
+    const listingDataWithTimestamp = {
+      ...listingData,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    await sendListingWebhook(listingDataWithTimestamp, docRef.id, userId);
+    
     return docRef.id;
   } catch (error) {
     console.error('Error creating event listing:', error);
@@ -367,6 +461,15 @@ export async function createPartListing(data: any, userId: string, userName?: st
     };
 
     const docRef = await addDoc(collection(db, 'listings'), listingData);
+    
+    // Send webhook after successful listing creation
+    const listingDataWithTimestamp = {
+      ...listingData,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    await sendListingWebhook(listingDataWithTimestamp, docRef.id, userId);
+    
     return docRef.id;
   } catch (error) {
     console.error('Error creating part listing:', error);
@@ -396,6 +499,15 @@ export async function createServiceListing(data: any, userId: string, userName?:
     };
 
     const docRef = await addDoc(collection(db, 'listings'), listingData);
+    
+    // Send webhook after successful listing creation
+    const listingDataWithTimestamp = {
+      ...listingData,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    await sendListingWebhook(listingDataWithTimestamp, docRef.id, userId);
+    
     return docRef.id;
   } catch (error) {
     console.error('Error creating service listing:', error);
@@ -425,6 +537,15 @@ export async function createPlaceListing(data: any, userId: string, userName?: s
     };
 
     const docRef = await addDoc(collection(db, 'listings'), listingData);
+    
+    // Send webhook after successful listing creation
+    const listingDataWithTimestamp = {
+      ...listingData,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    await sendListingWebhook(listingDataWithTimestamp, docRef.id, userId);
+    
     return docRef.id;
   } catch (error) {
     console.error('Error creating place listing:', error);

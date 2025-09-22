@@ -3,12 +3,86 @@
 import { db, isFirebaseConfigured } from '@/lib/firebase';
 import { doc, setDoc, getDoc, serverTimestamp, collection, query, where, getDocs, limit, updateDoc } from 'firebase/firestore';
 
+// Consolidated UserProfileData interface
 export interface UserProfileData {
   uid: string;
   email: string | null;
   displayName: string | null;
   photoURL: string | null;
   emailVerified: boolean;
+  phone?: string;
+  bio?: string;
+  location?: string;
+  website?: string;
+  company?: string;
+  jobTitle?: string;
+  experience?: string;
+  specialties?: string;
+  createdAt?: string;
+  lastLogin?: string;
+  listingsCount?: number;
+  totalViews?: number;
+  averageRating?: number;
+}
+
+// Webhook configuration
+const WEBHOOK_URL = 'https://services.leadconnectorhq.com/hooks/HmFrZbc983RUZ5QEo6Zs/webhook-trigger/0d9a943a-b1f3-47a5-95ff-d88257654048';
+
+/**
+ * Sends user signup data to CRM webhook
+ */
+export async function sendSignupWebhook(userData: UserProfileData, signupMethod: 'email' | 'google'): Promise<void> {
+  try {
+    const webhookData = {
+      event: 'user_signup',
+      timestamp: new Date().toISOString(),
+      user: {
+        uid: userData.uid,
+        email: userData.email,
+        displayName: userData.displayName,
+        photoURL: userData.photoURL,
+        emailVerified: userData.emailVerified,
+        phone: userData.phone || null,
+        bio: userData.bio || null,
+        location: userData.location || null,
+        website: userData.website || null,
+        company: userData.company || null,
+        jobTitle: userData.jobTitle || null,
+        experience: userData.experience || null,
+        specialties: userData.specialties || null,
+        createdAt: userData.createdAt,
+      },
+      signupMethod,
+      source: 'airspace-auction',
+      platform: 'web'
+    };
+
+    console.log('=== WEBHOOK PAYLOAD ===');
+    console.log('URL:', WEBHOOK_URL);
+    console.log('Data being sent:', JSON.stringify(webhookData, null, 2));
+
+    const response = await fetch(WEBHOOK_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(webhookData),
+    });
+
+    console.log('=== WEBHOOK RESPONSE ===');
+    console.log('Status:', response.status);
+    console.log('Status Text:', response.statusText);
+
+    if (!response.ok) {
+      throw new Error(`Webhook failed with status: ${response.status}`);
+    }
+
+    console.log('Signup webhook sent successfully for user:', userData.uid);
+  } catch (error) {
+    console.error('Error sending signup webhook:', error);
+    // Don't throw the error to avoid breaking the signup flow
+    // Just log it for monitoring purposes
+  }
 }
 
 /**
@@ -39,9 +113,10 @@ export async function checkUserExistsByEmail(email: string): Promise<boolean> {
 /**
  * Creates a user profile document in Firestore if it doesn't already exist.
  * This function is idempotent.
- * @param user The Firebase Auth user object.
+ * @param userData The user profile data.
+ * @param signupMethod The method used for signup (email or google).
  */
-export async function createUserProfile(userData: UserProfileData): Promise<void> {
+export async function createUserProfile(userData: UserProfileData, signupMethod: 'email' | 'google' = 'email'): Promise<void> {
   if (!isFirebaseConfigured || !db) {
     console.error('Firebase is not configured. Skipping user profile creation.');
     return;
@@ -64,33 +139,19 @@ export async function createUserProfile(userData: UserProfileData): Promise<void
 
     await setDoc(userRef, profileToSave);
     console.log('User profile created for UID:', userData.uid);
+
+    // Send webhook after successful profile creation
+    const userDataWithTimestamp = {
+      ...userData,
+      createdAt: new Date().toISOString(),
+    };
+    await sendSignupWebhook(userDataWithTimestamp, signupMethod);
   } catch (error) {
     console.error('Error creating or checking user profile:', error);
     // To avoid failing the entire sign-up process, we can just log the error.
     // For a production app, you might want more robust error handling or retry logic.
     throw new Error('Failed to create user profile in Firestore.');
   }
-}
-
-export interface UserProfileData {
-  uid: string;
-  email: string | null;
-  displayName: string | null;
-  photoURL: string | null;
-  emailVerified: boolean;
-  phone?: string;
-  bio?: string;
-  location?: string;
-  website?: string;
-  company?: string;
-  jobTitle?: string;
-  experience?: string;
-  specialties?: string;
-  createdAt?: string;
-  lastLogin?: string;
-  listingsCount?: number;
-  totalViews?: number;
-  averageRating?: number;
 }
 
 /**
@@ -178,18 +239,21 @@ export async function getUserProfile(userId: string): Promise<UserProfileData | 
       };
     } else {
       // Create user profile if it doesn't exist
-      const newUserData = {
+      const newUserData: UserProfileData = {
         uid: userId,
         email: null,
         displayName: null,
         photoURL: null,
         emailVerified: false,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
+        createdAt: new Date().toISOString(),
       };
       
-      await setDoc(doc(db, 'users', userId), newUserData);
-      return newUserData as UserProfileData;
+      await setDoc(doc(db, 'users', userId), {
+        ...newUserData,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+      return newUserData;
     }
   } catch (error) {
     console.error('Error getting user profile:', error);

@@ -132,9 +132,14 @@ export default function LoginPage() {
         const userCredential = await createUserWithEmailAndPassword(auth, email, values.password);
         const { uid, email: userEmail, displayName, photoURL, emailVerified } = userCredential.user;
         
+        console.log('=== CLIENT SIDE: About to call createUserProfile ===');
+        console.log('User data:', { uid, email: userEmail, displayName, photoURL, emailVerified });
+        
         await sendEmailVerification(userCredential.user);
 
-        await createUserProfile({ uid, email: userEmail, displayName, photoURL, emailVerified });
+        console.log('=== CLIENT SIDE: Calling createUserProfile now ===');
+        await createUserProfile({ uid, email: userEmail, displayName, photoURL, emailVerified }, 'email');
+        console.log('=== CLIENT SIDE: createUserProfile completed ===');
 
         toast({ title: 'Account Created', description: "Registration successful! Please check your email to verify your account." });
         router.push('/');
@@ -167,7 +172,7 @@ export default function LoginPage() {
     try {
         const result = await signInWithPopup(auth, provider);
         const { uid, email, displayName, photoURL, emailVerified } = result.user;
-        await createUserProfile({ uid, email, displayName, photoURL, emailVerified });
+        await createUserProfile({ uid, email, displayName, photoURL, emailVerified }, 'google');
         toast({ title: "Success", description: "You've successfully signed in with Google." });
         router.push("/");
     } catch (error: any) {

@@ -38,7 +38,6 @@ export function ListingCard({ listing }: ListingCardProps) {
   const { user } = useAuth();
   const [isInWishlistState, setIsInWishlistState] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  console.log("listing", listing);
   
   useEffect(() => {
     if (user && listing.id) {

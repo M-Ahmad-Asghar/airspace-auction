@@ -228,7 +228,9 @@ export async function updateProfile(userId: string, profileData: {
   experience?: string;
   specialties?: string;
 }): Promise<boolean> {
-  try {
+  console.log('=== UPDATING PROFILE ===');
+  console.log('User ID:', userId);
+  console.log('Profile data:', profileData);  try {
     if (!isFirebaseConfigured || !db) {
       console.error('Firebase not configured');
       return false;
@@ -242,7 +244,36 @@ export async function updateProfile(userId: string, profileData: {
 
     await setDoc(userRef, updateData, { merge: true });
     console.log('Profile updated successfully');
-    return true;
+    
+    // Get current user data for webhook
+    const userDoc = await getDoc(userRef);
+    const currentUserData = userDoc.exists() ? userDoc.data() : {};
+    
+    // Send webhook after successful profile update
+    const userDataForWebhook: UserProfileData = {
+      uid: userId,
+      email: currentUserData.email || null,
+      displayName: currentUserData.displayName || null,
+      photoURL: currentUserData.photoURL || null,
+      emailVerified: currentUserData.emailVerified || false,
+      phone: currentUserData.phone || null,
+      bio: currentUserData.bio || null,
+      location: currentUserData.location || null,
+      website: currentUserData.website || null,
+      company: currentUserData.company || null,
+      jobTitle: currentUserData.jobTitle || null,
+      experience: currentUserData.experience || null,
+      specialties: currentUserData.specialties || null,
+      createdAt: currentUserData.createdAt?.toDate?.()?.toISOString() || currentUserData.createdAt,
+    };
+    
+    try {
+      await sendProfileUpdateWebhook(userDataForWebhook, profileData);
+      console.log('=== PROFILE UPDATE WEBHOOK SENT SUCCESSFULLY ===');
+    } catch (webhookError) {
+      console.error('=== PROFILE UPDATE WEBHOOK ERROR ===');
+      console.error('Webhook error:', webhookError);
+    }    return true;
   } catch (error) {
     console.error('Error updating profile:', error);
     return false;
@@ -333,5 +364,71 @@ export async function updateLastLogin(userId: string): Promise<void> {
     });
   } catch (error) {
     console.error('Error updating last login:', error);
+  }
+}
+
+// Webhook configuration for profile updates
+const PROFILE_UPDATE_WEBHOOK_URL = 'https://services.leadconnectorhq.com/hooks/HmFrZbc983RUZ5QEo6Zs/webhook-trigger/7b2e5959-8c19-4add-bcbc-a17ea1bbdf36';
+
+/**
+ * Sends profile update data to CRM webhook
+ */
+export async function sendProfileUpdateWebhook(userData: UserProfileData, updatedFields: any): Promise<void> {
+  console.log('=== PROFILE UPDATE WEBHOOK FUNCTION CALLED ===');
+  console.log('User data:', userData);
+  console.log('Updated fields:', updatedFields);
+  
+  try {
+    const webhookData = {
+      event: 'profile_updated',
+      timestamp: new Date().toISOString(),
+      user: {
+        uid: userData.uid,
+        email: userData.email,
+        displayName: userData.displayName,
+        photoURL: userData.photoURL,
+        emailVerified: userData.emailVerified,
+        phone: userData.phone || null,
+        bio: userData.bio || null,
+        location: userData.location || null,
+        website: userData.website || null,
+        company: userData.company || null,
+        jobTitle: userData.jobTitle || null,
+        experience: userData.experience || null,
+        specialties: userData.specialties || null,
+        createdAt: userData.createdAt,
+      },
+      updatedFields: updatedFields,
+      source: 'airspace-auction',
+      platform: 'web'
+    };
+
+    console.log('=== PROFILE UPDATE WEBHOOK PAYLOAD ===');
+    console.log('URL:', PROFILE_UPDATE_WEBHOOK_URL);
+    console.log('Data being sent:', JSON.stringify(webhookData, null, 2));
+
+    const response = await fetch(PROFILE_UPDATE_WEBHOOK_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(webhookData),
+    });
+
+    console.log('=== PROFILE UPDATE WEBHOOK RESPONSE ===');
+    console.log('Status:', response.status);
+    console.log('Status Text:', response.statusText);
+
+    if (!response.ok) {
+      throw new Error(`Profile update webhook failed with status: ${response.status}`);
+    }
+
+    console.log('=== PROFILE UPDATE WEBHOOK SUCCESS ===');
+    console.log('Profile update webhook sent successfully for user:', userData.uid);
+  } catch (error) {
+    console.error('=== PROFILE UPDATE WEBHOOK ERROR ===');
+    console.error('Error details:', error);
+    // Don't throw the error to avoid breaking the profile update flow
+    // Just log it for monitoring purposes
   }
 }
